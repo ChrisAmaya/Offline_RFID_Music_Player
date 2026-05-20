@@ -15,11 +15,11 @@ GPIO Pin Configuration Documentation
 - SPI bus no longer shared - RFID has exclusive access
 
 **RFID Reader (RC522) - SPI0 Configuration:**
-- SPI Clock (CLK): GPIO 11 (Pin 23)
-- SPI MOSI (DIN): GPIO 10 (Pin 19)
-- SPI MISO (DOUT): GPIO 9 (Pin 21)
-- RFID Chip Select (SDA): GPIO 24 (Pin 18)
-- RFID Reset (RST): GPIO 25 (Pin 22)
+- SPI Clock (CLK): GPIO 11 (Physical Pin 23)
+- SPI MOSI (DIN): GPIO 10 (Physical Pin 19)
+- SPI MISO (DOUT): GPIO 9 (Physical Pin 21)
+- RFID Chip Select (SDA): GPIO 8 (Physical Pin 24)
+- RFID Reset (RST): GPIO 25 (Physical Pin 22)
 - RFID VCC: 3.3V (Pin 1 or 17)
 - RFID GND: GND (Pin 6, 9, 14, 20, 25, 30, 34, 39)
 
@@ -50,13 +50,13 @@ Pin 14 (GND)
 Pin 15 (GPIO 22)    → [Button: PREVIOUS]
 Pin 16 (GPIO 23)    → [Button: VOLUME UP]
 Pin 17 (3V3)
-Pin 18 (GPIO 24)    → RFID CS (SDA)
+Pin 18 (GPIO 24)    → [Available]
 Pin 19 (GPIO 10)    → SPI MOSI (RFID DIN)
 Pin 20 (GND)
 Pin 21 (GPIO 9)     → SPI MISO (RFID DOUT)
 Pin 22 (GPIO 25)    → RFID RST
 Pin 23 (GPIO 11)    → SPI CLK (RFID CLK)
-Pin 24 (GPIO 8)     → [Available - was display CS]
+Pin 24 (GPIO 8)     → RFID CS (SDA)
 Pin 25 (GND)
 Pin 26 (GPIO 7)     → [SPI CE1 - available]
 Pin 27 (GPIO 0 SDA) → [I2C]
