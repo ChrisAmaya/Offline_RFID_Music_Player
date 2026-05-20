@@ -55,13 +55,9 @@ def test_gpio_pins():
         GPIO.setwarnings(False)
         
         pins = {
-            24: "RFID CS",
+            8: "RFID CS",
             25: "RFID RST",
             10: "RFID MOSI",
-            8: "Display CS",
-            23: "Display D/C",
-            27: "Display RST",
-            12: "Backlight",
             9: "SPI MISO",
             11: "SPI CLK",
         }
