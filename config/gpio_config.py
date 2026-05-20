@@ -15,6 +15,9 @@ BUTTON_NEXT = 6           # GPIO 6 - Next Track
 BUTTON_PREV = 5           # GPIO 5 - Previous Track
 BUTTON_SHUFFLE = 22       # GPIO 22 - Shuffle On/Off
 
+# LED GPIO Pins
+LED_SHUFFLE = 27          # GPIO 27 - Shuffle status indicator
+
 # SPI Speed (Hz)
 SPI_SPEED = 1000000  # 1 MHz (RC522 typical)
 
@@ -32,6 +35,9 @@ GPIO_PINS = {
         "next": BUTTON_NEXT,
         "prev": BUTTON_PREV,
         "shuffle": BUTTON_SHUFFLE,
+    },
+    "leds": {
+        "shuffle": LED_SHUFFLE,
     }
 }
 
