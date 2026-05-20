@@ -17,7 +17,7 @@ except ImportError as e:
 
 def main():
     print("=" * 60)
-    print("LED TESTING - Shuffle Indicator")
+    print("LED TESTING - Shuffle Indicator (Continuous ON)")
     print("=" * 60)
     print()
     print(f"LED Configuration:")
@@ -38,55 +38,22 @@ def main():
     print()
     
     try:
-        # Test 1: LED OFF (initial state)
-        print("Test 1: LED OFF (initial state)")
-        print(f"  State: {led_handler.get_state('shuffle')}")
-        time.sleep(1)
+        print("Turning LED ON and keeping it on...")
+        print("(Press Ctrl+C to stop)")
         print()
         
-        # Test 2: Turn LED ON
-        print("Test 2: Turning LED ON...")
+        # Turn LED on
         led_handler.on("shuffle")
-        print(f"  State: {led_handler.get_state('shuffle')}")
-        time.sleep(2)
+        print(f"LED State: ON")
+        print(f"GPIO 27 voltage: Should be 3.3V")
         print()
         
-        # Test 3: Turn LED OFF
-        print("Test 3: Turning LED OFF...")
-        led_handler.off("shuffle")
-        print(f"  State: {led_handler.get_state('shuffle')}")
-        time.sleep(2)
-        print()
-        
-        # Test 4: Toggle (OFF → ON)
-        print("Test 4: Toggle (OFF → ON)...")
-        new_state = led_handler.toggle("shuffle")
-        print(f"  New state: {new_state}")
-        time.sleep(1)
-        print()
-        
-        # Test 5: Toggle (ON → OFF)
-        print("Test 5: Toggle (ON → OFF)...")
-        new_state = led_handler.toggle("shuffle")
-        print(f"  New state: {new_state}")
-        time.sleep(1)
-        print()
-        
-        # Test 6: Rapid toggle (simulate button presses)
-        print("Test 6: Rapid toggle (simulating button presses)...")
-        for i in range(5):
-            new_state = led_handler.toggle("shuffle")
-            print(f"  Toggle {i+1}: {new_state}")
-            time.sleep(0.3)
-        print()
-        
-        print("-" * 60)
-        print()
-        print("✓ LED Test complete!")
-        print()
-        print(f"Final LED state: {'ON' if led_handler.get_state('shuffle') else 'OFF'}")
+        # Keep it on
+        while True:
+            time.sleep(1)
         
     except KeyboardInterrupt:
+        print()
         print()
         print("✓ Test interrupted by user")
     
