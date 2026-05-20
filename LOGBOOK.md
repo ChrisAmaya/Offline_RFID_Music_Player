@@ -1,8 +1,8 @@
 # RFID/CD Music Player - Project Logbook
 
 **Project Start Date:** April 12, 2026  
-**Last Updated:** May 19, 2026  
-**Status:** Phase 2 ✓ COMPLETE - Phase 3 In Progress (Button testing)
+**Last Updated:** May 20, 2026  
+**Status:** Phase 3 In Progress - Button + LED integration working
 
 ---
 
@@ -160,13 +160,17 @@ GPIO 23, 24, 25, 27: input (ready to configure) ✓
 ## **Phase 3: Button Control Implementation - IN PROGRESS**
 
 ### **Start Date:** May 19, 2026
+### **Current Status:** Button + LED Integration Complete
 
 #### **Objectives:**
 - [x] Create button handler module with debouncing
-- [ ] Test all 4 buttons individually
-- [ ] Verify button detection and callbacks
-- [ ] Integrate with RFID reader events
-- [ ] Connect to audio playback controls
+- [x] Test all 4 buttons individually ✓ Working
+- [x] Verify button detection and callbacks ✓ Working
+- [x] Create LED handler module ✓ Working
+- [x] Test LED on/off/toggle ✓ Working
+- [x] Integrate shuffle button with shuffle LED ✓ Working
+- [ ] Integrate with audio playback controls
+- [ ] Integrate with RFID reader
 
 #### **Button Configuration:**
 ```
@@ -176,9 +180,26 @@ Button 3: Previous    → GPIO 5
 Button 4: Shuffle     → GPIO 22
 ```
 
+#### **LED Configuration:**
+```
+LED 1: Shuffle Status → GPIO 27 (ON = shuffle enabled)
+```
+
 #### **Files Created:**
 - `src/button_handler.py` - Button detection with debouncing and callbacks
-- `test_buttons.py` - Button testing script for verification
+- `src/led_handler.py` - LED control with on/off/toggle support
+- `test_buttons.py` - Individual button test
+- `test_led.py` - Individual LED test
+- `test_button_led_integration.py` - Shuffle button + LED integration test ✓ Working
+
+#### **Integration Details (May 20, 2026):**
+
+**Shuffle Button + LED Integration:**
+- Shuffle button (GPIO 22) now controls LED (GPIO 27)
+- Pressing shuffle button toggles between ON/OFF states
+- LED state reflects shuffle status (ON = shuffle enabled)
+- Debouncing prevents false triggers (50ms)
+- State persists across button presses
 
 ---
 
