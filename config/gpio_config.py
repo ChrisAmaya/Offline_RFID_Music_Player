@@ -9,6 +9,12 @@ RFID_SPI_DEVICE = 0
 RFID_CS_PIN = 8           # GPIO 8 (Physical Pin 24, Chip Select)
 RFID_RST_PIN = 25         # GPIO 25 (Physical Pin 22, Reset)
 
+# Button GPIO Pins
+BUTTON_PLAY_PAUSE = 26    # GPIO 26 - Play/Pause
+BUTTON_NEXT = 6           # GPIO 6 - Next Track
+BUTTON_PREV = 5           # GPIO 5 - Previous Track
+BUTTON_SHUFFLE = 22       # GPIO 22 - Shuffle On/Off
+
 # SPI Speed (Hz)
 SPI_SPEED = 1000000  # 1 MHz (RC522 typical)
 
@@ -20,6 +26,12 @@ GPIO_PINS = {
     "rfid": {
         "cs": RFID_CS_PIN,
         "rst": RFID_RST_PIN,
+    },
+    "buttons": {
+        "play_pause": BUTTON_PLAY_PAUSE,
+        "next": BUTTON_NEXT,
+        "prev": BUTTON_PREV,
+        "shuffle": BUTTON_SHUFFLE,
     }
 }
 
