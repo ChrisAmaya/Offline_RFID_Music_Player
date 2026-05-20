@@ -102,6 +102,7 @@ GPIO 23, 24, 25, 27: input (ready to configure) ✓
 | TFT RST pin on wrong GPIO | May 5 | Moved wire from Pin 11 (GPIO 17) to Pin 13 (GPIO 27) | ✓ Resolved |
 | RFID 3.3V power not connected | May 5 | Added connection from Pin 1 (3.3V) to RFID VCC | ✓ Resolved |
 | RFID CS and RST pins swapped | May 5 | Swapped SDA (Pin 18/GPIO 24) and RST (Pin 22/GPIO 25) wires | ✓ Resolved |
+| RC522 tags not detected after config (Phase 2) | May 19 | RFID CS pin was GPIO 24 (wrong), corrected to GPIO 8 (Pin 24) - Pin numbers vs GPIO confusion | ✓ **RESOLVED - TAGS NOW DETECTED** |
 | GPIO testing library (wiringpi) not available | May 5 | Used Python RPi.GPIO and spidev libraries instead | ✓ Resolved |
 
 #### **Hardware Verification Results:**
@@ -159,12 +160,12 @@ GPIO 23, 24, 25, 27: input (ready to configure) ✓
 #### **Objectives (Revised):**
 - [x] Remove display references from codebase
 - [x] Update hardware configuration documents
-- [ ] Troubleshoot RFID tag detection issue
-- [ ] Create RFID reader Python module
-- [ ] Test RC522 tag reading capability
-- [ ] Implement tag callback system
-- [ ] Build database mapping for tags → content
-- [ ] Test with actual RFID tags
+- [x] Troubleshoot RFID tag detection issue ✓ **RESOLVED - GPIO 8 (Pin 24) was correct CS pin**
+- [x] Create RFID reader Python module ✓ Working
+- [x] Test RC522 tag reading capability ✓ **TAGS NOW DETECTED**
+- [ ] Implement database mapping for tags → content
+- [ ] Build tag-to-playlist/album mapping system
+- [ ] Test with collection of RFID tags
 
 #### **Current Work (May 5, 2026):**
 
