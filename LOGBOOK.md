@@ -1,8 +1,8 @@
 # RFID/CD Music Player - Project Logbook
 
 **Project Start Date:** April 12, 2026  
-**Last Updated:** May 20, 2026  
-**Status:** Phase 3 In Progress - Button + LED integration working
+**Last Updated:** May 21, 2026  
+**Status:** Phase 3 In Progress - Potentiometer volume control working
 
 ---
 
@@ -185,11 +185,29 @@ Button 4: Shuffle     → GPIO 22
 LED 1: Shuffle Status → GPIO 27 (ON = shuffle enabled)
 ```
 
+#### **Potentiometer Configuration (May 21, 2026):**
+```
+PCF8591 ADC:
+  I2C Bus: 1
+  Address: 0x48
+  SDA: GPIO 2 (Pin 3)
+  SCL: GPIO 3 (Pin 5)
+
+Potentiometer (R2k, 2102):
+  Pin 1 (GND)      → Pi GND
+  Pin 2 (Signal)   → PCF8591 AIN0
+  Pin 3 (3.3V)     → Pi 3.3V
+
+Volume Range: 0-100%
+```
+
 #### **Files Created:**
 - `src/button_handler.py` - Button detection with debouncing and callbacks
 - `src/led_handler.py` - LED control with on/off/toggle support
+- `src/potentiometer_handler.py` - Potentiometer (ADC) handler with value callbacks ✓ Working
 - `test_buttons.py` - Individual button test
 - `test_led.py` - Individual LED test
+- `test_potentiometer.py` - Potentiometer test ✓ Working
 - `test_button_led_integration.py` - Shuffle button + LED integration test ✓ Working
 
 #### **Integration Details (May 20, 2026):**
@@ -200,6 +218,17 @@ LED 1: Shuffle Status → GPIO 27 (ON = shuffle enabled)
 - LED state reflects shuffle status (ON = shuffle enabled)
 - Debouncing prevents false triggers (50ms)
 - State persists across button presses
+
+#### **Potentiometer Volume Control (May 21, 2026):**
+- Successfully identified potentiometer pin configuration
+- Wired Pin 1 (GND) → Pi GND
+- Wired Pin 2 (Signal) → PCF8591 AIN0
+- Wired Pin 3 (3.3V) → Pi 3.3V
+- PCF8591 connected via I2C (GPIO 2 SDA, GPIO 3 SCL)
+- Potentiometer reading: 0-2kΩ (converted to 0-100% volume)
+- Real-time volume updates with callback system
+- Deadzone filtering prevents jitter (±3 raw units)
+- **Status**: ✓ Working and tested successfully
 
 ---
 
