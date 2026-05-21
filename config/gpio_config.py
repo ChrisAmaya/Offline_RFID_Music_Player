@@ -18,6 +18,11 @@ BUTTON_SHUFFLE = 22       # GPIO 22 - Shuffle On/Off
 # LED GPIO Pins
 LED_SHUFFLE = 27          # GPIO 27 - Shuffle status indicator
 
+# Potentiometer (PCF8591 ADC)
+PCF8591_I2C_ADDRESS = 0x48    # Default PCF8591 I2C address
+PCF8591_CHANNEL_VOLUME = 0    # AIN0 - Volume potentiometer
+PCF8591_I2C_BUS = 1           # I2C bus 1 (GPIO 2 SDA, GPIO 3 SCL)
+
 # SPI Speed (Hz)
 SPI_SPEED = 1000000  # 1 MHz (RC522 typical)
 
