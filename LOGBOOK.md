@@ -1,8 +1,8 @@
 # RFID/CD Music Player - Project Logbook
 
 **Project Start Date:** April 12, 2026  
-**Last Updated:** May 21, 2026  
-**Status:** Phase 3 In Progress - Potentiometer volume control working
+**Last Updated:** May 23, 2026  
+**Status:** Phase 3 In Progress - Audio system verified and working
 
 ---
 
@@ -229,6 +229,15 @@ Volume Range: 0-100%
 - Real-time volume updates with callback system
 - Deadzone filtering prevents jitter (±3 raw units)
 - **Status**: ✓ Working and tested successfully
+
+#### **Audio System Setup (May 23, 2026):**
+- HiFiBerry DAC+ Light mounted on Raspberry Pi 3B
+- Enabled I2S in `/boot/config.txt`
+- Loaded HiFiBerry device tree overlay: `dtoverlay=hifiberry-dac`
+- Audio chain: HiFiBerry RCA → Amplifier RCA In → Powered Speakers
+- Verified audio output using: `speaker-test -D hw:1,0 -t sine -f 1000 -c 2 -l 3`
+- **Status**: ✓ Audio confirmed working through speakers
+- Note: Left speaker has minor hardware issue (to investigate later)
 
 ---
 
