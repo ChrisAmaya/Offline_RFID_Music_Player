@@ -237,7 +237,100 @@ Volume Range: 0-100%
 - Audio chain: HiFiBerry RCA → Amplifier RCA In → Powered Speakers
 - Verified audio output using: `speaker-test -D hw:1,0 -t sine -f 1000 -c 2 -l 3`
 - **Status**: ✓ Audio confirmed working through speakers
-- Note: Left speaker has minor hardware issue (to investigate later)
+- Note: Left speaker had minor hardware issue (now fixed)
+
+#### **Audio Testing & Discoveries (May 23, 2026):**
+
+**Issue 1: No Controls in alsamixer**
+- Ran `alsamixer -c 1` → "This sound device does not have any controls"
+- Investigation: HiFiBerry driver loaded but audio control interface not fully initialized
+- Resolution: Not needed for basic playback; audio works without controls
+- Audio can be controlled via application level (mpv, etc.)
+
+**Issue 2: Mono vs Stereo Confusion**
+- Initial test with `aplay /usr/share/sounds/alsa/Front_Center.wav` produced no sound
+- File format: "Signed 16 bit Little Endian, Rate 48000 Hz, **Mono**"
+- HiFiBerry expects: **Stereo (2 channels)**
+- Discovery: Physical connectors (RCA/3.5mm) ≠ audio channels
+  - RCA red/white = Left/Right channels (always stereo on HiFiBerry)
+  - 3.5mm jack (on HiFiBerry) = Also stereo internally
+  - Mono/Stereo refers to NUMBER OF CHANNELS, not connector type
+- Resolution: Use stereo audio sources (or mono-to-stereo conversion)
+
+**Issue 3: aplay vs speaker-test Device Specification**
+- Initial test: `aplay -D hw:1,0` + mono file = no sound
+- Working test: `speaker-test -D hw:1,0 -t sine -f 1000 -c 2 -l 3` = confirmed audio
+- Key difference: speaker-test with `-c 2` (2 channels/stereo)
+- Updated test_audio_repeat.sh to use stereo speaker-test instead of mono file
+
+**Issue 4: Default Audio Device Configuration**
+- After HiFiBerry setup, system still defaulting to bcm2835 (Card 0)
+- Created `/etc/asound.conf` to set HiFiBerry (Card 1) as default
+- Configuration: `defaults.pcm.card 1` and `defaults.ctl.card 1`
+- Effect: All audio applications automatically use HiFiBerry without device specification
+
+**Key Learnings:**
+1. HiFiBerry outputs stereo on both RCA and 3.5mm connectors
+2. Stereo/mono refers to channels, not physical connectors
+3. Always specify `-c 2` for stereo output to HiFiBerry
+4. Set default audio device to avoid specifying `hw:1,0` in every application
+5. RCA cables can be swapped between different amplifiers/speakers without software changes
+
+**Status**: ✓ Audio system fully tested and configured for stereo output
+
+#### **CD Player Module Setup (May 23, 2026):**
+- Created USB CD module support to test CD playback capability
+- Implemented three test scripts for CD functionality testing
+- Created Python CD player module for future integration
+
+**Test Scripts Created:**
+
+1. **test_cd_detect.sh** - CD Device Detection
+   - Lists available block devices
+   - Searches for /dev/sr*, /dev/cdrom, /dev/dvd devices
+   - Queries CD information using cdparanoia and cd-info
+   - Auto-installs required dependencies if missing
+   - Usage: `bash test_cd_detect.sh`
+
+2. **test_cd_play.sh** - CD Playback Testing
+   - Attempts to play CD using available backend (mpv → mplayer → cdparanoia)
+   - Supports device path and duration arguments
+   - Usage: `bash test_cd_play.sh [device] [duration_seconds]`
+   - Example: `bash test_cd_play.sh /dev/sr0 30` (plays for 30 seconds)
+
+3. **src/cd_player.py** - Python CD Player Module
+   - Object-oriented interface for CD detection and playback
+   - Automatically detects best available backend
+   - Key Methods:
+     - `CDPlayer(device_path)` - Initialize with CD device
+     - `play()` - Start CD playback
+     - `stop()` - Stop playback
+     - `is_playing()` - Check current status
+     - `detect_cd_devices()` - Find all available CD/DVD devices
+   - Supports multiple backends: mpv, mplayer, cdparanoia
+   - Can run directly for quick testing: `python3 src/cd_player.py`
+
+**Expected Device Paths:**
+- `/dev/sr0`, `/dev/sr1`, `/dev/sr2` (SCSI CD-ROM devices)
+- `/dev/cdrom`, `/dev/cdrom0` (CD-ROM symlinks)
+- `/dev/dvd`, `/dev/dvd0` (DVD device symlinks)
+
+**Dependencies to Install on Raspberry Pi:**
+```bash
+# At least one of these required:
+sudo apt-get install mpv              # Recommended - modern, works well
+sudo apt-get install mplayer          # Alternative player
+sudo apt-get install cdparanoia       # Audio extraction (last resort)
+```
+
+**Next Steps - Sanity Check on Raspberry Pi:**
+1. Connect USB CD module to Raspberry Pi
+2. Insert a CD into the module
+3. Run: `bash test_cd_detect.sh` - Verify device is detected
+4. Run: `bash test_cd_play.sh /dev/sr0` - Test playback
+5. Verify audio comes through HiFiBerry speakers
+
+**Status**: ⏳ Ready for testing on Raspberry Pi with physical USB CD module
 
 ---
 
