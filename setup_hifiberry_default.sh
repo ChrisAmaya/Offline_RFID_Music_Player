@@ -10,15 +10,15 @@ echo ""
 # Create /etc/asound.conf
 sudo tee /etc/asound.conf > /dev/null <<EOF
 # ALSA Configuration - HiFiBerry DAC as default
-defaults.pcm.card 1
-defaults.ctl.card 1
+defaults.pcm.card 2
+defaults.ctl.card 2
 EOF
 
 echo "✓ Created /etc/asound.conf"
 echo ""
 echo "Configuration:"
-echo "  Default PCM card: 1 (HiFiBerry)"
-echo "  Default CTL card: 1 (HiFiBerry)"
+echo "  Default PCM card: 2 (HiFiBerry)"
+echo "  Default CTL card: 2 (HiFiBerry)"
 echo ""
 
 # Verify

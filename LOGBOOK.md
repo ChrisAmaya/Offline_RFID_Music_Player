@@ -332,6 +332,40 @@ sudo apt-get install cdparanoia       # Audio extraction (last resort)
 
 **Status**: ⏳ Ready for testing on Raspberry Pi with physical USB CD module
 
+#### **HiFiBerry Audio Device Fix (May 26, 2026):**
+
+**Issue Found:**
+- HiFiBerry was recognized as **Card 2** (`sndrpihifiberry`), not Card 1
+- Original setup scripts configured Card 1 as default
+- Previous tests specified `hw:1,0` which was incorrect
+
+**Fix Applied:**
+1. **Updated test_audio_repeat.sh**: Changed from `hw:1,0` to `hw:2,0`
+2. **Updated setup_hifiberry_default.sh**: Changed default from Card 1 to Card 2
+3. **Test Result**: ✓ `speaker-test -D hw:2,0 -t sine -f 1000 -c 2 -l 1` produces audio through speakers
+
+**Card Assignments on Raspberry Pi 3B:**
+- Card 0: `bcm2835_hdmi` (HDMI audio - not used)
+- Card 1: `bcm2835_headphones` (3.5mm jack - not used)
+- **Card 2: `sndrpihifiberry` (HiFiBerry DAC+ - PRIMARY AUDIO OUTPUT)**
+
+**Next Steps on Pi to Apply Fix:**
+```bash
+# 1. Pull latest code
+git pull
+
+# 2. Update default audio configuration to Card 2
+sudo bash setup_hifiberry_default.sh
+
+# 3. Verify it worked
+cat /etc/asound.conf
+
+# 4. Test audio output
+bash test_audio_repeat.sh
+```
+
+**Status**: ✓ HiFiBerry audio working correctly with Card 2
+
 ---
 
 #### **Objectives (Revised):**
