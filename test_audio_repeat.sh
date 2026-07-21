@@ -1,7 +1,7 @@
 #!/bin/bash
 # Repeating Audio Test Script
 # Plays stereo test tones through HiFiBerry DAC using speaker-test
-# Uses hw:1,0 (HiFiBerry DAC+) with 2 channels (stereo)
+# Uses hw:1,0 (HiFiBerry DAC+ - Card 1) with 2 channels (stereo)
 
 echo "=========================================="
 echo "Audio Test - Repeating (10 times)"
