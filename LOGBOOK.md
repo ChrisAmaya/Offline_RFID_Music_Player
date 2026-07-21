@@ -1,8 +1,8 @@
 # RFID/CD Music Player - Project Logbook
 
 **Project Start Date:** April 12, 2026  
-**Last Updated:** May 23, 2026  
-**Status:** Phase 3 In Progress - Audio system verified and working
+**Last Updated:** July 20, 2026  
+**Status:** Phase 4 In Progress - Offline RFID playback prototype implemented and tested
 
 ---
 
@@ -518,6 +518,41 @@ RFID_Player/
 | Hardware Interface | Python 3.9+ | ✓ Available |
 | RFID | mfrc522 library + RC522 | In Progress |
 | Audio | mpv (planned) | Not started |
+
+---
+
+## **Phase 4: Offline RFID Playback Prototype (July 20, 2026)**
+
+### **Summary**
+- Shifted focus from CD playback to a simpler offline local-audio player.
+- Implemented a lightweight SQLite-based mapping system where RFID tags map to albums or playlists stored locally.
+- Verified that the project can now use local MP3 files from a shared folder and play them through the HiFiBerry output.
+
+### **What Was Completed**
+- Created a local test script for RFID tag → album mapping and playback: `test-rfid-play.py`
+- Added a sample SQLite database at `data/rfid_library.db`
+- Added support for preserving album track order in the database rather than relying on filesystem order.
+- Added ordering support for artist-prefixed filenames such as `Mac Miller-Come Back to Earth.mp3`.
+- Added fuzzy filename matching so slight naming mismatches (for example extra spaces) are still resolved correctly.
+- Added regression tests for album-ordering and filename-matching behavior in `tests/test_album_order.py`.
+- Published the latest script and database updates to GitHub.
+
+### **Current Mapping Approach**
+- The SQLite database stores:
+  - `content` rows for albums/playlists
+  - `content_entries` rows for individual songs with a stored sort order
+  - `tag_mappings` rows that link an RFID tag ID to a content item
+- This keeps the repository lightweight while leaving the actual media files local on the Pi.
+
+### **Example Setup Command Used**
+```bash
+python3 test-rfid-play.py --setup --tag-id 495133495530 --album-name "Mac Miller - Swimming" --music-dir ~/All_Songs --media-root ~/All_Songs --track-order "Mac Miller-Come Back to Earth.mp3,Mac Miller-Hurt Feelings.mp3,Mac Miller-What's the Use-.mp3,Mac Miller-Perfecto.mp3,Mac Miller-Self Care.mp3,Mac Miller-Wings.mp3,Mac Miller-Ladders.mp3,Mac Miller-Small Worlds.mp3,Mac Miller-Conversation Pt. 1.mp3,Mac Miller-Dunno.mp3,Mac Miller-Jet Fuel.mp3,Mac Miller-2009.mp3,Mac Miller-So It Goes.mp3"
+```
+
+### **Next Steps**
+- Validate the mapped tag on the Raspberry Pi with a real RFID scan.
+- Expand the database with additional albums/playlists as needed.
+- Optionally add a small launcher or service so tag scans trigger playback automatically.
 | Database | SQLite3 | Not started |
 | UI | pygame (TFT) | Not started |
 | GPIO | RPi.GPIO | In Progress |
