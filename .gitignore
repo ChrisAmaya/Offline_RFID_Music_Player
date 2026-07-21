@@ -41,12 +41,15 @@ env/
 Thumbs.db
 
 # Project-specific
-*.db
-*.sqlite3
 data/music/*
 data/cd_database/*
 logs/
 *.log
+*.mp3
+*.m4a
+*.wav
+*.flac
+!data/rfid_library.db
 
 # Node (if using web UI)
 node_modules/
