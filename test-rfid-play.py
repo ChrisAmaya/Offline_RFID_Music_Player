@@ -41,12 +41,12 @@ DEFAULT_TRACK_ORDER = [
     "Self Care.mp3",
     "Wings.mp3",
     "Ladders.mp3",
+    "Small Worlds.mp3",
+    "Conversation Pt. 1.mp3",
     "Dunno.mp3",
     "Jet Fuel.mp3",
-    "Small Worlds.mp3",
-    "So It Goes.mp3",
-    "Conversation Pt. 1.mp3",
     "2009.mp3",
+    "So It Goes.mp3",
 ]
 
 
