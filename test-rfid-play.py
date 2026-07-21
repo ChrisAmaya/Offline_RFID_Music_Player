@@ -33,6 +33,21 @@ DEFAULT_DB_PATH = Path("~/Offline_RFID_Music_Player/data/rfid_library.db").expan
 DEFAULT_MUSIC_DIR = Path("~/All_Songs").expanduser()
 DEFAULT_MEDIA_ROOT = DEFAULT_MUSIC_DIR
 DEFAULT_TAG_ID = "replace-me-with-your-real-tag"
+DEFAULT_TRACK_ORDER = [
+    "Come Back to Earth.mp3",
+    "Hurt Feelings.mp3",
+    "What's the Use-.mp3",
+    "Perfecto.mp3",
+    "Self Care.mp3",
+    "Wings.mp3",
+    "Ladders.mp3",
+    "Dunno.mp3",
+    "Jet Fuel.mp3",
+    "Small Worlds.mp3",
+    "So It Goes.mp3",
+    "Conversation Pt. 1.mp3",
+    "2009.mp3",
+]
 
 
 def init_db(db_path: Path) -> sqlite3.Connection:
@@ -56,10 +71,14 @@ def init_db(db_path: Path) -> sqlite3.Connection:
             content_id INTEGER NOT NULL,
             path TEXT NOT NULL,
             title TEXT,
+            sort_order INTEGER NOT NULL DEFAULT 0,
             FOREIGN KEY(content_id) REFERENCES content(id) ON DELETE CASCADE
         )
         """
     )
+    columns = [row[1] for row in conn.execute("PRAGMA table_info(content_entries)").fetchall()]
+    if "sort_order" not in columns:
+        conn.execute("ALTER TABLE content_entries ADD COLUMN sort_order INTEGER NOT NULL DEFAULT 0")
     conn.execute(
         """
         CREATE TABLE IF NOT EXISTS tag_mappings (
@@ -81,7 +100,14 @@ def discover_audio_files(music_dir: Path) -> List[Path]:
     return sorted(files, key=lambda p: p.name.lower())
 
 
-def create_album_mapping(conn: sqlite3.Connection, tag_id: str, album_name: str, music_dir: Path, media_root: Optional[Path] = None) -> int:
+def create_album_mapping(
+    conn: sqlite3.Connection,
+    tag_id: str,
+    album_name: str,
+    music_dir: Path,
+    media_root: Optional[Path] = None,
+    track_order: Optional[List[str]] = None,
+) -> int:
     audio_files = discover_audio_files(music_dir)
     if not audio_files:
         raise FileNotFoundError(f"No supported audio files found in {music_dir}")
@@ -89,6 +115,21 @@ def create_album_mapping(conn: sqlite3.Connection, tag_id: str, album_name: str,
     if media_root is None:
         media_root = music_dir
     media_root = media_root.expanduser()
+
+    if track_order is None and album_name == "Mac Miller - Swimming":
+        track_order = DEFAULT_TRACK_ORDER
+
+    ordered_files: List[Path] = []
+    if track_order:
+        requested_names = {Path(item).name.lower(): item for item in track_order}
+        for requested_name in requested_names:
+            matching_file = next((path for path in audio_files if path.name.lower() == requested_name), None)
+            if matching_file is not None:
+                ordered_files.append(matching_file)
+        remaining_files = [path for path in audio_files if path not in ordered_files]
+        ordered_files.extend(remaining_files)
+    else:
+        ordered_files = sorted(audio_files, key=lambda p: p.name.lower())
 
     cursor = conn.execute("SELECT id FROM content WHERE name = ? AND kind = 'album'", (album_name,))
     existing_row = cursor.fetchone()
@@ -102,11 +143,11 @@ def create_album_mapping(conn: sqlite3.Connection, tag_id: str, album_name: str,
         )
         content_id = cursor.lastrowid
 
-    for song_path in audio_files:
+    for sort_order, song_path in enumerate(ordered_files):
         relative_path = os.path.relpath(song_path, media_root)
         conn.execute(
-            "INSERT INTO content_entries (content_id, path, title) VALUES (?, ?, ?)",
-            (content_id, relative_path, song_path.stem),
+            "INSERT INTO content_entries (content_id, path, title, sort_order) VALUES (?, ?, ?, ?)",
+            (content_id, relative_path, song_path.stem, sort_order),
         )
 
     conn.execute("INSERT OR REPLACE INTO tag_mappings (tag_id, content_id) VALUES (?, ?)", (tag_id, content_id))
@@ -129,7 +170,7 @@ def get_content_for_tag(conn: sqlite3.Connection, tag_id: str) -> Optional[tuple
 
 def get_content_entries(conn: sqlite3.Connection, content_id: int) -> List[tuple]:
     return conn.execute(
-        "SELECT path, title FROM content_entries WHERE content_id = ? ORDER BY id",
+        "SELECT path, title FROM content_entries WHERE content_id = ? ORDER BY sort_order, id",
         (content_id,),
     ).fetchall()
 
@@ -231,6 +272,7 @@ def parse_args() -> argparse.Namespace:
     parser.add_argument("--album-name", default="Mac Miller - Swimming", help="Name for the album entry")
     parser.add_argument("--db", default=str(DEFAULT_DB_PATH), help="Path to the SQLite database file")
     parser.add_argument("--media-root", default=str(DEFAULT_MEDIA_ROOT), help="Base folder containing the audio files on this machine")
+    parser.add_argument("--track-order", default=None, help="Comma-separated track filenames in the desired album order")
     parser.add_argument("--listen", action="store_true", help="Wait for RFID tags and play the mapped content")
     parser.add_argument("--play", action="store_true", help="Play the content mapped to the specified tag")
     return parser.parse_args()
@@ -242,12 +284,16 @@ def main() -> None:
     conn = init_db(db_path)
 
     if args.setup:
+        track_order = None
+        if args.track_order:
+            track_order = [item.strip() for item in args.track_order.split(",") if item.strip()]
         content_id = create_album_mapping(
             conn,
             args.tag_id,
             args.album_name,
             Path(args.music_dir).expanduser(),
             Path(args.media_root).expanduser(),
+            track_order=track_order,
         )
         print(f"Mapped tag {args.tag_id} to album '{args.album_name}' (content_id={content_id})")
         print(f"Database: {db_path}")
