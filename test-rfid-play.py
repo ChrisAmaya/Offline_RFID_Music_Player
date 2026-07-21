@@ -17,6 +17,7 @@ The script is intentionally simple and local-only. It does not need to be pushed
 
 import argparse
 import os
+import re
 import sqlite3
 import subprocess
 import sys
@@ -100,6 +101,27 @@ def discover_audio_files(music_dir: Path) -> List[Path]:
     return sorted(files, key=lambda p: p.name.lower())
 
 
+def _normalize_filename(text: str) -> str:
+    return re.sub(r"\s+", " ", text).strip().lower()
+
+
+def _find_matching_audio_file(requested_name: str, audio_files: List[Path]) -> Optional[Path]:
+    requested_norm = _normalize_filename(requested_name)
+    requested_stem = Path(requested_norm).stem
+    for path in audio_files:
+        candidate_names = [
+            _normalize_filename(path.name),
+            _normalize_filename(path.stem),
+        ]
+        if any(candidate == requested_norm for candidate in candidate_names):
+            return path
+        if any(candidate.startswith(requested_norm) or requested_norm.startswith(candidate) for candidate in candidate_names):
+            return path
+        if requested_stem and any(candidate == requested_stem for candidate in [Path(name).stem for name in candidate_names]):
+            return path
+    return None
+
+
 def create_album_mapping(
     conn: sqlite3.Connection,
     tag_id: str,
@@ -123,18 +145,7 @@ def create_album_mapping(
     if track_order:
         requested_names = [item.strip() for item in track_order if item and item.strip()]
         for requested_name in requested_names:
-            requested_basename = Path(requested_name).name.lower()
-            matching_file = next(
-                (
-                    path
-                    for path in audio_files
-                    if path.name.lower() == requested_basename
-                    or path.stem.lower() == requested_basename
-                    or path.stem.lower().endswith(requested_basename)
-                    or path.name.lower().endswith(requested_basename)
-                ),
-                None,
-            )
+            matching_file = _find_matching_audio_file(requested_name, audio_files)
             if matching_file is not None and matching_file not in ordered_files:
                 ordered_files.append(matching_file)
         remaining_files = [path for path in audio_files if path not in ordered_files]
