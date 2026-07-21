@@ -121,10 +121,21 @@ def create_album_mapping(
 
     ordered_files: List[Path] = []
     if track_order:
-        requested_names = {Path(item).name.lower(): item for item in track_order}
+        requested_names = [item.strip() for item in track_order if item and item.strip()]
         for requested_name in requested_names:
-            matching_file = next((path for path in audio_files if path.name.lower() == requested_name), None)
-            if matching_file is not None:
+            requested_basename = Path(requested_name).name.lower()
+            matching_file = next(
+                (
+                    path
+                    for path in audio_files
+                    if path.name.lower() == requested_basename
+                    or path.stem.lower() == requested_basename
+                    or path.stem.lower().endswith(requested_basename)
+                    or path.name.lower().endswith(requested_basename)
+                ),
+                None,
+            )
+            if matching_file is not None and matching_file not in ordered_files:
                 ordered_files.append(matching_file)
         remaining_files = [path for path in audio_files if path not in ordered_files]
         ordered_files.extend(remaining_files)
