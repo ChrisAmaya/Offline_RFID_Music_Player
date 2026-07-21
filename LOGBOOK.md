@@ -332,6 +332,24 @@ sudo apt-get install cdparanoia       # Audio extraction (last resort)
 
 **Status**: ⏳ Ready for testing on Raspberry Pi with physical USB CD module
 
+#### **Scope Change: CD Player Removed from Core Requirements (July 20, 2026):**
+- Re-evaluated the USB CD module approach after repeated hardware and power issues
+- The USB CD drive introduced reliability and power-supply concerns that were outside the core goal of the project
+- Decision: remove CD playback from the primary project scope for now
+- Focus shifts to the core offline music player experience: RFID-triggered playback of local audio content
+- The CD-related scripts and module remain available as experimental reference code, but are no longer a priority for implementation
+
+**Impact of Scope Change:**
+- ✅ Keeps project focused on the main goal: RFID-driven music playback
+- ✅ Avoids continued debugging of USB power and media-read issues
+- ✅ Preserves the option to revisit CD support later if a more reliable drive or power solution becomes available
+
+**Updated Project Goal:**
+- Implement RFID tag detection and mapping to songs, albums, or playlists
+- Play local audio files through the HiFiBerry output
+- Support button controls and volume control
+- Keep the system simple, reliable, and offline
+
 #### **HiFiBerry Audio Device Fix (May 26, 2026):**
 
 **Issue Found:**
