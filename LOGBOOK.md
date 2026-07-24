@@ -1,8 +1,8 @@
 # RFID/CD Music Player - Project Logbook
 
 **Project Start Date:** April 12, 2026  
-**Last Updated:** July 20, 2026  
-**Status:** Phase 4 In Progress - Offline RFID playback prototype implemented and tested
+**Last Updated:** July 23, 2026  
+**Status:** Phase 4 In Progress - Offline RFID playback prototype implemented and tested; preparing for module-based refactor
 
 ---
 
@@ -158,6 +158,19 @@ GPIO 23, 24, 25, 27: input (ready to configure) ✓
 ---
 
 ## **Phase 3: Button Control Implementation - IN PROGRESS**
+
+### **Current Focus (July 23, 2026): Restructuring for Module-Based Implementation**
+
+#### **Objective:**
+- [ ] Restructure the current prototype scripts into a clearer module-based architecture
+- [ ] Separate playback, RFID handling, hardware control, and database logic into dedicated modules
+- [ ] Prepare the project for a more maintainable implementation path before further feature expansion
+
+#### **Notes:**
+- Playback functionality has been validated using the ffmpeg-to-ALSA path
+- Queue-style playback controls (play/pause, next, previous, shuffle) are now implemented in the prototype layer
+- The next development step is to reorganize the existing files into reusable modules rather than continuing as ad-hoc scripts
+- This refactor will make it easier to wire the playback controller to physical buttons and RFID events cleanly
 
 ### **Start Date:** May 19, 2026
 ### **Current Status:** Button + LED Integration Complete
@@ -553,6 +566,20 @@ python3 test-rfid-play.py --setup --tag-id 495133495530 --album-name "Mac Miller
 - Validate the mapped tag on the Raspberry Pi with a real RFID scan.
 - Expand the database with additional albums/playlists as needed.
 - Optionally add a small launcher or service so tag scans trigger playback automatically.
+
+### **Recent Test Note (July 20, 2026)**
+- The RFID mapping setup was prepared and the album order was configured, but the playback test did not complete successfully before time ran out.
+- The next priority is to verify that the configured audio files actually play through the HiFiBerry output from the Pi.
+- If playback fails, the next debugging step will be to confirm the audio player binary, the file paths, and the ALSA output device selection.
+
+### **Playback Success Note (July 23, 2026)**
+- Confirmed that the HiFiBerry output and ALSA path are working.
+- Verified that a working playback command is:
+  ```bash
+  ffmpeg -i /path/to/file.mp3 -vn -c:a pcm_s16le -ar 48000 -ac 2 -f alsa hw:1,0
+  ```
+- This command successfully played a test MP3 through the Pi's audio output after forcing PCM audio output at 48 kHz stereo.
+- This is now the preferred playback approach for the project until a more direct media-player integration is available.
 | Database | SQLite3 | Not started |
 | UI | pygame (TFT) | Not started |
 | GPIO | RPi.GPIO | In Progress |
