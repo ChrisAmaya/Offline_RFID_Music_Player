@@ -8,11 +8,44 @@ import sys
 from pathlib import Path
 
 
-def find_player() -> str:
-    for cmd in (["mpv", "--no-video", "--really-quiet"], ["mplayer"], ["ffplay", "-nodisp", "-autoexit"]):
-        if shutil.which(cmd[0]):
-            return " ".join(cmd)
-    raise RuntimeError("No compatible player found. Install mpv, mplayer, or ffplay.")
+PLAYER_OPTIONS = [
+    (["vlc", "--intf", "dummy", "--play-and-exit"], "VLC"),
+    (["mpv", "--no-video", "--really-quiet"], "mpv"),
+    (["mplayer"], "mplayer"),
+    (["ffplay", "-nodisp", "-autoexit"], "ffplay"),
+]
+
+
+def check_package(name: str) -> bool:
+    return shutil.which(name) is not None
+
+
+def check_requirements() -> None:
+    print("Checking audio playback dependencies...")
+    available = []
+    missing = []
+
+    for cmd, label in PLAYER_OPTIONS:
+        if check_package(cmd[0]):
+            available.append(label)
+        else:
+            missing.append(label)
+
+    if available:
+        print("Available players:", ", ".join(available))
+    else:
+        print("No supported audio players were found.")
+
+    if missing:
+        print("Missing players:", ", ".join(missing))
+        print("Install one of them with: sudo apt install vlc mpv mplayer ffmpeg")
+
+
+def find_player() -> list[str]:
+    for cmd, _label in PLAYER_OPTIONS:
+        if check_package(cmd[0]):
+            return cmd
+    raise RuntimeError("No compatible player found. Install VLC, mpv, mplayer, or ffplay.")
 
 
 def main() -> None:
@@ -29,10 +62,12 @@ def main() -> None:
         print(f"Expected a .mp3 file, got: {audio_path}", file=sys.stderr)
         sys.exit(1)
 
-    player = find_player()
+    check_requirements()
+
+    player_cmd = find_player()
     print(f"Playing: {audio_path}")
-    print(f"Using player: {player}")
-    subprocess.Popen(player.split() + [str(audio_path)])
+    print(f"Using player: {' '.join(player_cmd)}")
+    subprocess.Popen(player_cmd + [str(audio_path)])
 
 
 if __name__ == "__main__":
