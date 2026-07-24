@@ -42,8 +42,9 @@ def check_requirements() -> None:
 
 
 def find_player() -> list[str]:
-    for cmd, _label in PLAYER_OPTIONS:
+    for cmd, label in PLAYER_OPTIONS:
         if check_package(cmd[0]):
+            print(f"Preferred player available: {label}")
             return cmd
     raise RuntimeError("No compatible player found. Install VLC, mpv, mplayer, or ffplay.")
 
