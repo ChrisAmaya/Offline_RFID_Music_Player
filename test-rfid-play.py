@@ -17,13 +17,16 @@ The script is intentionally simple and local-only. It does not need to be pushed
 
 import argparse
 import os
+import random
 import re
+import shutil
+import signal
 import sqlite3
 import subprocess
 import sys
 import time
 from pathlib import Path
-from typing import List, Optional
+from typing import Callable, List, Optional
 
 try:
     from src.rfid_reader import RFIDReader
@@ -197,6 +200,130 @@ def get_content_entries(conn: sqlite3.Connection, content_id: int) -> List[tuple
     ).fetchall()
 
 
+class FFmpegPlaybackController:
+    """Small controller for ffmpeg-based playback with pause/skip/shuffle support."""
+
+    def __init__(
+        self,
+        playlist: List[str],
+        *,
+        media_root: Optional[Path] = None,
+        alsa_device: str = "hw:1,0",
+        shuffle: bool = False,
+        shuffle_seed: Optional[int] = None,
+        process_factory: Optional[Callable[[List[str]], object]] = None,
+    ) -> None:
+        self.playlist = list(playlist)
+        self.media_root = media_root
+        self.alsa_device = alsa_device
+        self.shuffle = shuffle
+        self.shuffle_seed = shuffle_seed
+        self.process_factory = process_factory or self._default_process_factory
+        self.process = None
+        self.current_index = 0
+        self.paused = False
+        self.current_path = self.playlist[0] if self.playlist else None
+        if self.shuffle:
+            self._shuffle_playlist()
+
+    def _default_process_factory(self, command: List[str]):
+        return subprocess.Popen(command, stdout=subprocess.DEVNULL, stderr=subprocess.DEVNULL)
+
+    def _is_process_running(self) -> bool:
+        if self.process is None:
+            return False
+        poll = getattr(self.process, "poll", None)
+        if poll is None:
+            return True
+        return poll() is None
+
+    def _shuffle_playlist(self) -> None:
+        if not self.playlist:
+            return
+        shuffled = list(self.playlist)
+        random.Random(self.shuffle_seed).shuffle(shuffled)
+        self.playlist = shuffled
+        self.current_index = 0
+        self.current_path = self.playlist[0] if self.playlist else None
+
+    def _build_command(self, path: str) -> List[str]:
+        return [
+            "ffmpeg",
+            "-i",
+            path,
+            "-vn",
+            "-c:a",
+            "pcm_s16le",
+            "-ar",
+            "48000",
+            "-ac",
+            "2",
+            "-f",
+            "alsa",
+            self.alsa_device,
+        ]
+
+    def _stop_current_process(self) -> None:
+        if self.process is None:
+            return
+        poll = getattr(self.process, "poll", None)
+        if callable(poll):
+            if poll() is not None:
+                self.process = None
+                return
+        try:
+            terminate = getattr(self.process, "terminate", None)
+            if callable(terminate):
+                terminate()
+            else:
+                os.kill(self.process.pid, signal.SIGTERM)
+        except Exception:
+            pass
+        self.process = None
+
+    def play(self, index: Optional[int] = None) -> None:
+        if not self.playlist:
+            return
+        if index is not None:
+            self.current_index = index % len(self.playlist)
+        if self._is_process_running():
+            if self.paused:
+                os.kill(self.process.pid, signal.SIGCONT)
+                self.paused = False
+            return
+        if self.process is not None:
+            self.process = None
+        self.current_path = self.playlist[self.current_index]
+        command = self._build_command(self.current_path)
+        self.process = self.process_factory(command)
+        self.paused = False
+
+    def toggle_pause(self) -> None:
+        if self.process is None:
+            self.play()
+            return
+        if self.paused:
+            os.kill(self.process.pid, signal.SIGCONT)
+            self.paused = False
+        else:
+            os.kill(self.process.pid, signal.SIGSTOP)
+            self.paused = True
+
+    def next_track(self) -> None:
+        if not self.playlist:
+            return
+        self._stop_current_process()
+        self.current_index = (self.current_index + 1) % len(self.playlist)
+        self.play(self.current_index)
+
+    def previous_track(self) -> None:
+        if not self.playlist:
+            return
+        self._stop_current_process()
+        self.current_index = (self.current_index - 1) % len(self.playlist)
+        self.play(self.current_index)
+
+
 def find_player() -> Optional[List[str]]:
     for cmd in (["mpv", "--no-video", "--really-quiet"], ["mplayer"], ["ffplay", "-nodisp", "-autoexit"]):
         try:
@@ -240,9 +367,15 @@ def play_content(conn: sqlite3.Connection, tag_id: str, media_root: Optional[Pat
         resolved_path = resolve_media_path(entry[0], media_root)
         resolved_paths.append(str(resolved_path))
 
+    if shutil.which("ffmpeg"):
+        controller = FFmpegPlaybackController(resolved_paths, media_root=media_root)
+        controller.play()
+        print("Launching ffmpeg playback controller")
+        return
+
     player_cmd = find_player()
     if not player_cmd:
-        raise RuntimeError("No compatible player found. Install mpv, mplayer, or ffplay.")
+        raise RuntimeError("No compatible player found. Install mpv, mplayer, ffplay, or ffmpeg.")
 
     command = player_cmd + resolved_paths
     print("Launching:", " ".join(command))
