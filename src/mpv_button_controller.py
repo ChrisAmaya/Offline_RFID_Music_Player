@@ -30,8 +30,7 @@ def build_mpv_command(playlist_path: str, socket_path: str = "/tmp/mpv-control.s
         "--no-audio-display",
         "--audio-device=alsa/default",
         "--audio-samplerate=48000",
-        "--playlist",
-        playlist_path,
+        f"--playlist={playlist_path}",
         f"--input-ipc-server={socket_path}",
     ]
 
