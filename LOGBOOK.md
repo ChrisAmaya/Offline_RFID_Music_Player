@@ -611,6 +611,8 @@ VLC media player 3.0.20 Vetinari (revision 3.0.20-0-g6f0d0ab126b)
 ```
 - For some reason vlc just does not work on my Pi, I suspect that the volume is being set to zero automatically
 
+### **Playback succesfull with MPV (Aug 3rd 2026)**
+- Minimum viable usage: mpv --no-audio-display --audio-device=alsa/default --audio-samplerate=48000 /path/to/song
 
 ---
 
