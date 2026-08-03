@@ -613,6 +613,9 @@ VLC media player 3.0.20 Vetinari (revision 3.0.20-0-g6f0d0ab126b)
 
 ### **Playback succesfull with MPV (Aug 3rd 2026)**
 - Minimum viable usage: mpv --no-audio-display --audio-device=alsa/default --audio-samplerate=48000 /path/to/song
+- You can create tracklists by datamining the album songs with: src/album_tracklist.py. It does assume each album has its own directory
+- I tested running src/mpv_button_controller. It failed. Looks like running on a socket is a problem. 
+- Next debugging phase: Do we need sockets? Test on sockets.
 
 ---
 
