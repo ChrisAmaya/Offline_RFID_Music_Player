@@ -30,6 +30,7 @@ def build_mpv_command(playlist_path: str, socket_path: str = "/tmp/mpv-control.s
         "--no-audio-display",
         "--audio-device=alsa/default",
         "--audio-samplerate=48000",
+        "--idle=yes",
         f"--playlist={playlist_path}",
         f"--input-ipc-server={socket_path}",
     ]
@@ -112,6 +113,12 @@ class MPVButtonController:
             )
             debug_print(f"mpv process started with pid {self.process.pid}")
 
+        for _ in range(20):
+            if socket_status(self.socket_path) != "missing":
+                break
+            time.sleep(0.2)
+
+        debug_print(f"socket status after startup wait: {socket_status(self.socket_path)}")
         self.button_handler.start()
 
         def on_button(event: ButtonEvent) -> None:

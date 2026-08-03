@@ -17,8 +17,8 @@ class MPVButtonControllerTests(unittest.TestCase):
             cmd = build_mpv_command(str(playlist), socket_path="/tmp/mpv.sock")
 
             self.assertIn("mpv", cmd)
-            self.assertIn("--playlist=", cmd[4])
-            self.assertIn(str(playlist), cmd[4])
+            self.assertTrue(any(item.startswith("--playlist=") for item in cmd))
+            self.assertTrue(any(str(playlist) in item for item in cmd if item.startswith("--playlist=")))
             self.assertIn("--input-ipc-server=/tmp/mpv.sock", cmd)
             self.assertIn("--audio-samplerate=48000", cmd)
 
