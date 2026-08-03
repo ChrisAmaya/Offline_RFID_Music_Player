@@ -6,6 +6,7 @@ from __future__ import annotations
 import argparse
 import os
 import socket
+import stat
 import subprocess
 import sys
 import time
@@ -57,8 +58,18 @@ def socket_status(socket_path: str) -> str:
     """Return a short status string for the IPC socket path."""
     if not os.path.exists(socket_path):
         return "missing"
-    if os.path.exists(socket_path) and os.path.isfile(socket_path):
-        return "present"
+
+    try:
+        mode = os.stat(socket_path).st_mode
+    except FileNotFoundError:
+        return "missing"
+
+    if os.path.islink(socket_path):
+        return "symlink"
+    if socket.S_ISSOCK(mode):
+        return "unix-socket"
+    if stat.S_ISREG(mode):
+        return "regular-file"
     return "other"
 
 
