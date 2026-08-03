@@ -12,6 +12,9 @@ import time
 from pathlib import Path
 from typing import Optional
 
+
+DEBUG = True
+
 PROJECT_ROOT = Path(__file__).resolve().parents[1]
 if str(PROJECT_ROOT) not in sys.path:
     sys.path.insert(0, str(PROJECT_ROOT))
@@ -44,15 +47,41 @@ def button_command_for(button_name: str) -> list[str]:
     return mapping.get(button_name, [])
 
 
+def debug_print(message: str) -> None:
+    """Print a debug message when debugging is enabled."""
+    if DEBUG:
+        print(f"[mpv-controller] {message}")
+
+
+def socket_status(socket_path: str) -> str:
+    """Return a short status string for the IPC socket path."""
+    if not os.path.exists(socket_path):
+        return "missing"
+    if os.path.exists(socket_path) and os.path.isfile(socket_path):
+        return "present"
+    return "other"
+
+
 def send_mpv_command(socket_path: str, command: list[str]) -> None:
     """Send a command to mpv over its IPC socket."""
     if not command:
         return
 
-    with socket.socket(socket.AF_UNIX, socket.SOCK_STREAM) as sock:
-        sock.connect(socket_path)
-        payload = "\n".join(command) + "\n"
-        sock.sendall(payload.encode("utf-8"))
+    payload = "\n".join(command) + "\n"
+    debug_print(f"sending command: {payload.rstrip()}")
+    debug_print(f"socket status before send: {socket_status(socket_path)}")
+
+    try:
+        with socket.socket(socket.AF_UNIX, socket.SOCK_STREAM) as sock:
+            sock.connect(socket_path)
+            sock.sendall(payload.encode("utf-8"))
+            debug_print(f"command sent successfully to {socket_path}")
+    except FileNotFoundError:
+        debug_print(f"socket not found at {socket_path}")
+    except ConnectionRefusedError:
+        debug_print(f"socket connection refused at {socket_path}")
+    except Exception as exc:
+        debug_print(f"socket send failed: {exc}")
 
 
 class MPVButtonController:
@@ -73,19 +102,25 @@ class MPVButtonController:
 
     def start(self) -> None:
         """Start mpv and the button handler."""
+        debug_print(f"starting mpv with playlist: {self.playlist_path}")
+        debug_print(f"using socket: {self.socket_path}")
+
         if self.process is None or self.process.poll() is not None:
             self.process = subprocess.Popen(
                 build_mpv_command(self.playlist_path, self.socket_path),
                 stdout=subprocess.DEVNULL,
                 stderr=subprocess.DEVNULL,
             )
+            debug_print(f"mpv process started with pid {self.process.pid}")
 
         self.button_handler.start()
 
         def on_button(event: ButtonEvent) -> None:
             command = button_command_for(event.button_name)
             if not command:
+                debug_print(f"no mpv command mapped for button: {event.button_name}")
                 return
+            debug_print(f"button pressed: {event.button_name}")
             send_mpv_command(self.socket_path, command)
 
         for button_id in [1, 2, 3, 4]:
@@ -93,6 +128,7 @@ class MPVButtonController:
 
     def stop(self) -> None:
         """Stop the controller and clean up GPIO resources."""
+        debug_print("stopping controller")
         self.button_handler.cleanup()
         if self.process and self.process.poll() is None:
             self.process.terminate()
@@ -100,6 +136,7 @@ class MPVButtonController:
                 self.process.wait(timeout=3)
             except subprocess.TimeoutExpired:
                 self.process.kill()
+        debug_print(f"final socket status: {socket_status(self.socket_path)}")
 
 
 def main() -> int:
@@ -111,6 +148,7 @@ def main() -> int:
     controller = MPVButtonController(args.playlist, socket_path=args.socket)
     controller.start()
     print("Controller started. Press buttons to control mpv.")
+    debug_print(f"socket status after start: {socket_status(args.socket)}")
     try:
         while True:
             time.sleep(1)
