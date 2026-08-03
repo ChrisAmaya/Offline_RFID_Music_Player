@@ -12,8 +12,8 @@ from dataclasses import dataclass
 
 try:
     import RPi.GPIO as GPIO
-except ImportError:
-    raise ImportError("RPi.GPIO library not installed")
+except ImportError:  # pragma: no cover - fallback for testing on non-Pi systems
+    GPIO = None
 
 # Setup logging
 logger = logging.getLogger(__name__)
@@ -56,6 +56,10 @@ class ButtonHandler:
         self._thread = None
         self._lock = threading.Lock()
         
+        if GPIO is None:
+            logger.warning("RPi.GPIO not available; button handler will be non-functional")
+            return
+        
         # Setup GPIO
         GPIO.setmode(GPIO.BCM)
         GPIO.setwarnings(False)
@@ -71,6 +75,9 @@ class ButtonHandler:
             gpio_pin: GPIO pin number (BCM)
             button_name: Human-readable button name
         """
+        if GPIO is None:
+            raise ImportError("RPi.GPIO library not installed")
+
         try:
             GPIO.setup(gpio_pin, GPIO.IN, pull_up_down=GPIO.PUD_UP)
             self.buttons[button_id] = {
@@ -119,6 +126,9 @@ class ButtonHandler:
     
     def _poll_buttons(self):
         """Background thread that polls buttons for presses"""
+        if GPIO is None:
+            return
+
         logger.debug("Button polling thread started")
         
         while self._running:
@@ -186,7 +196,8 @@ class ButtonHandler:
     def cleanup(self):
         """Clean up GPIO resources"""
         self.stop()
-        GPIO.cleanup()
+        if GPIO is not None:
+            GPIO.cleanup()
         logger.info("ButtonHandler cleanup complete")
     
     def __del__(self):
