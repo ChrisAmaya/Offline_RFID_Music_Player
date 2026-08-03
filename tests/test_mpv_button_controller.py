@@ -5,6 +5,7 @@ from pathlib import Path
 
 sys.path.insert(0, str(Path(__file__).resolve().parents[1]))
 
+from src.button_handler import ButtonHandler
 from src.mpv_button_controller import build_mpv_command, button_command_for
 
 
@@ -26,6 +27,11 @@ class MPVButtonControllerTests(unittest.TestCase):
         self.assertEqual(button_command_for("Next"), ["playlist-next"])
         self.assertEqual(button_command_for("Previous"), ["playlist-prev"])
         self.assertEqual(button_command_for("Shuffle"), ["playlist-shuffle"])
+
+    def test_button_handler_registers_buttons_without_gpio(self):
+        handler = ButtonHandler()
+        handler.register_button(1, 26, "Play/Pause")
+        self.assertIn(1, handler.buttons)
 
 
 if __name__ == "__main__":

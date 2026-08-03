@@ -10,7 +10,11 @@ import subprocess
 import sys
 import time
 from pathlib import Path
-from typing import Callable, Optional
+from typing import Optional
+
+PROJECT_ROOT = Path(__file__).resolve().parents[1]
+if str(PROJECT_ROOT) not in sys.path:
+    sys.path.insert(0, str(PROJECT_ROOT))
 
 from config.gpio_config import BUTTON_NEXT, BUTTON_PLAY_PAUSE, BUTTON_PREV, BUTTON_SHUFFLE
 from src.button_handler import ButtonEvent, ButtonHandler

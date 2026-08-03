@@ -55,8 +55,9 @@ class ButtonHandler:
         self._running = False
         self._thread = None
         self._lock = threading.Lock()
+        self._gpio_available = GPIO is not None
         
-        if GPIO is None:
+        if not self._gpio_available:
             logger.warning("RPi.GPIO not available; button handler will be non-functional")
             return
         
@@ -75,8 +76,15 @@ class ButtonHandler:
             gpio_pin: GPIO pin number (BCM)
             button_name: Human-readable button name
         """
-        if GPIO is None:
-            raise ImportError("RPi.GPIO library not installed")
+        if not self._gpio_available:
+            self.buttons[button_id] = {
+                "gpio": gpio_pin,
+                "name": button_name,
+                "state": None,
+            }
+            self.last_press[button_id] = 0
+            logger.warning(f"GPIO unavailable; button {button_name} registered in non-active mode")
+            return
 
         try:
             GPIO.setup(gpio_pin, GPIO.IN, pull_up_down=GPIO.PUD_UP)
@@ -126,7 +134,7 @@ class ButtonHandler:
     
     def _poll_buttons(self):
         """Background thread that polls buttons for presses"""
-        if GPIO is None:
+        if not self._gpio_available:
             return
 
         logger.debug("Button polling thread started")
@@ -188,6 +196,11 @@ class ButtonHandler:
         """
         with self._lock:
             states = {}
+            if not self._gpio_available:
+                for button_id in self.buttons:
+                    states[button_id] = False
+                return states
+
             for button_id, button_info in self.buttons.items():
                 # Button is pressed when GPIO is LOW (active low with pull-up)
                 states[button_id] = GPIO.input(button_info["gpio"]) == GPIO.LOW
