@@ -66,7 +66,7 @@ def socket_status(socket_path: str) -> str:
 
     if os.path.islink(socket_path):
         return "symlink"
-    if socket.S_ISSOCK(mode):
+    if stat.S_ISSOCK(mode):
         return "unix-socket"
     if stat.S_ISREG(mode):
         return "regular-file"
