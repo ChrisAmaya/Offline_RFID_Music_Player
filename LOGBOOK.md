@@ -1,8 +1,8 @@
 # RFID/CD Music Player - Project Logbook
 
 **Project Start Date:** April 12, 2026  
-**Last Updated:** July 23, 2026  
-**Status:** Phase 4 In Progress - Offline RFID playback prototype implemented and tested; preparing for module-based refactor
+**Last Updated:** August 3, 2026  
+**Status:** Phase 4 In Progress - Offline RFID playback prototype implemented and tested; verified mpv playback of MP3 files through the HiFiBerry DAC
 
 ---
 
@@ -397,6 +397,20 @@ bash test_audio_repeat.sh
 
 **Status**: ✓ HiFiBerry audio working correctly with Card 2
 
+#### **mpv MP3 Playback Verified (August 3, 2026):**
+- Verified that MP3 files can be played successfully through the HiFiBerry output using `mpv`
+- Working playback command:
+  ```bash
+  mpv --no-audio-display --audio-device=alsa/default:CARD=sndrpihifiberry --audio-samplerate=48000 ~/All_Songs/Mac\ Miller-Jet\ Fuel.mp3
+  ```
+- Also verified a working variant with explicit stereo output:
+  ```bash
+  mpv --no-audio-display --audio-device=alsa/default:CARD=sndrpihifiberry --audio-channels=stereo --audio-samplerate=48000 ~/All_Songs/Mac\ Miller-Jet\ Fuel.mp3
+  ```
+- Key finding: specifying `--audio-samplerate=48000` was the important factor that made playback work reliably
+- The successful test also showed that the HiFiBerry output works with either the stereo-flagged variant or the simpler variant without `--audio-channels=stereo`, which simplifies future playback commands
+- This confirms the Pi can play local MP3 files through the configured HiFiBerry audio output
+
 ---
 
 #### **Objectives (Revised):**
@@ -583,6 +597,20 @@ python3 test-rfid-play.py --setup --tag-id 495133495530 --album-name "Mac Miller
 | Database | SQLite3 | Not started |
 | UI | pygame (TFT) | Not started |
 | GPIO | RPi.GPIO | In Progress |
+
+### **Playback Success Note (July 25, 2026)**
+- decided I want to get vlc to work
+- Confirmed it works on my personal desktop using 
+```bash
+cvlc ~/Downloads/mac-miller-swimming_202506/Jet\ Fuel.mp3
+```
+- It had this output
+```bash
+VLC media player 3.0.20 Vetinari (revision 3.0.20-0-g6f0d0ab126b)
+[0000641870322fb0] dummy interface: using the dummy interface module...
+```
+- For some reason vlc just does not work on my Pi, I suspect that the volume is being set to zero automatically
+
 
 ---
 
