@@ -1,12 +1,13 @@
 import sys
 import tempfile
 import unittest
+from unittest.mock import patch
 from pathlib import Path
 
 sys.path.insert(0, str(Path(__file__).resolve().parents[1]))
 
 from src.button_handler import ButtonHandler
-from src.mpv_button_controller import build_mpv_command, button_command_for
+from src.mpv_button_controller import build_mpv_command, button_command_for, send_mpv_command
 
 
 class MPVButtonControllerTests(unittest.TestCase):
@@ -32,6 +33,16 @@ class MPVButtonControllerTests(unittest.TestCase):
         handler = ButtonHandler()
         handler.register_button(1, 26, "Play/Pause")
         self.assertIn(1, handler.buttons)
+
+    def test_send_mpv_command_uses_json_ipc_protocol(self):
+        with patch("src.mpv_button_controller.socket.socket") as socket_factory:
+            socket_instance = socket_factory.return_value.__enter__.return_value
+
+            with patch("src.mpv_button_controller.socket_status", return_value="unix-socket"):
+                send_mpv_command("/tmp/mpv.sock", ["cycle", "pause"])
+
+            payload = socket_instance.sendall.call_args.args[0].decode("utf-8")
+            self.assertEqual(payload, '{"command": ["cycle", "pause"]}\n')
 
 
 if __name__ == "__main__":

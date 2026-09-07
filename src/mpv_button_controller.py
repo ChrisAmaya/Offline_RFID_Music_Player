@@ -4,6 +4,7 @@
 from __future__ import annotations
 
 import argparse
+import json
 import os
 import socket
 import stat
@@ -78,12 +79,13 @@ def send_mpv_command(socket_path: str, command: list[str]) -> None:
     if not command:
         return
 
-    payload = "\n".join(command) + "\n"
-    debug_print(f"sending command: {payload.rstrip()}")
+    payload = json.dumps({"command": command}) + "\n"
+    debug_print(f"sending command: {command}")
     debug_print(f"socket status before send: {socket_status(socket_path)}")
 
     try:
         with socket.socket(socket.AF_UNIX, socket.SOCK_STREAM) as sock:
+            sock.settimeout(2.0)
             sock.connect(socket_path)
             sock.sendall(payload.encode("utf-8"))
             debug_print(f"command sent successfully to {socket_path}")
