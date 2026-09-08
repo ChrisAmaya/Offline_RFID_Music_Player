@@ -680,5 +680,25 @@ VLC media player 3.0.20 Vetinari (revision 3.0.20-0-g6f0d0ab126b)
   python3 src/rfid_pause_play.py
   ```
 
+### **RFID Playlist Controls and Shuffle LED Verified (September 7, 2026)**
+
+- Confirmed that `src/rfid_playlist_controls.py` waits for an RFID tag and starts the album `tracklist.txt` with mpv.
+- Added continuous playback with `--loop-playlist=inf`, so the album restarts after its final track regardless of shuffle state.
+- Confirmed physical controls for the active mpv session:
+  - Play/Pause: `cycle pause`
+  - Next: `playlist-next`
+  - Previous: `playlist-prev`
+  - Shuffle: toggles between `playlist-shuffle` and `playlist-unshuffle`
+- Confirmed that button commands use mpv's Unix IPC socket and newline-delimited JSON.
+- Added shuffle LED feedback: LED off means shuffle is disabled; LED on means shuffle is enabled.
+- Added `LED_SHUFFLE_BOARD = 13` to the shared GPIO configuration for the BOARD-mode LED pin.
+- The playlist controller preserves the BOARD GPIO mode selected by `SimpleMFRC522` for the buttons and LED.
+- Successful command to run the integrated playlist test:
+  ```bash
+  python3 src/rfid_playlist_controls.py
+  ```
+
+**Status**: RFID playlist playback, looping, physical controls, and shuffle LED are working as expected.
+
 **End of Logbook Entry**  
-*Next update expected: After successful pause/play hardware testing*
+*Next update expected: After adding additional RFID album mappings*

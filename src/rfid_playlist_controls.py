@@ -21,10 +21,14 @@ from config.gpio_config import (
     BUTTON_PREV_BOARD,
     BUTTON_SHUFFLE_BOARD,
     LED_SHUFFLE_BOARD,
+    PCF8591_CHANNEL_VOLUME,
+    PCF8591_I2C_ADDRESS,
+    PCF8591_I2C_BUS,
 )
 from src.button_handler import ButtonHandler
 from src.led_handler import LEDHandler
 from src.mpv_button_controller import send_mpv_command, socket_status
+from src.potentiometer_handler import PotentiometerHandler
 
 
 PLAYLIST_PATH = os.path.expanduser("~/all_songs/mac_miller_swimming/tracklist.txt")
@@ -100,6 +104,12 @@ class PlaylistController:
         self.shuffle_enabled = False
         self.buttons = ButtonHandler(debounce_ms=50, gpio_mode=None)
         self.leds = LEDHandler(gpio_mode=None)
+        self.potentiometer = PotentiometerHandler(
+            i2c_bus=PCF8591_I2C_BUS,
+            pcf8591_address=PCF8591_I2C_ADDRESS,
+            channel=PCF8591_CHANNEL_VOLUME,
+            deadzone=3,
+        )
         self.buttons.register_button(1, BUTTON_PLAY_PAUSE_BOARD, "Play/Pause")
         self.buttons.register_button(2, BUTTON_NEXT_BOARD, "Next")
         self.buttons.register_button(3, BUTTON_PREV_BOARD, "Previous")
@@ -116,7 +126,10 @@ class PlaylistController:
         }
         for button_id, callback in callbacks.items():
             self.buttons.set_button_callback(button_id, callback)
+
+        self.potentiometer.set_callback(self.set_volume)
         self.buttons.start()
+        self.potentiometer.start()
 
     def send(self, command: list[str], label: str) -> None:
         print(f"{label}: {command}")
@@ -128,7 +141,12 @@ class PlaylistController:
         self.leds.set_state("shuffle", self.shuffle_enabled)
         self.send(command, f"Shuffle {'enabled' if self.shuffle_enabled else 'disabled'}")
 
+    def set_volume(self, _raw_value: int, percentage: int) -> None:
+        """Set mpv's software volume from the PCF8591 potentiometer."""
+        self.send(["set_property", "volume", percentage], f"Volume {percentage}%")
+
     def cleanup(self) -> None:
+        self.potentiometer.cleanup()
         self.buttons.cleanup()
         self.leds.cleanup()
 
