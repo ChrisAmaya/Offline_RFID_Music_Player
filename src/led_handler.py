@@ -26,13 +26,14 @@ class LEDHandler:
     - State tracking
     """
     
-    def __init__(self):
-        """Initialize LED handler"""
+    def __init__(self, gpio_mode=GPIO.BCM):
+        """Initialize LED handler, optionally preserving an existing GPIO mode."""
         self.leds = {}
         self.states = {}
         
         # Setup GPIO
-        GPIO.setmode(GPIO.BCM)
+        if gpio_mode is not None:
+            GPIO.setmode(gpio_mode)
         GPIO.setwarnings(False)
         
         logger.info("LEDHandler initialized")

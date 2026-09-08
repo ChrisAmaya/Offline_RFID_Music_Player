@@ -20,8 +20,10 @@ from config.gpio_config import (
     BUTTON_PLAY_PAUSE_BOARD,
     BUTTON_PREV_BOARD,
     BUTTON_SHUFFLE_BOARD,
+    LED_SHUFFLE_BOARD,
 )
 from src.button_handler import ButtonHandler
+from src.led_handler import LEDHandler
 from src.mpv_button_controller import send_mpv_command, socket_status
 
 
@@ -74,6 +76,7 @@ def start_player(playlist_path: str, socket_path: str) -> subprocess.Popen[Any]:
         "--no-audio-display",
         "--audio-device=alsa/default",
         "--audio-samplerate=48000",
+        "--loop-playlist=inf",
         f"--input-ipc-server={socket_path}",
         f"--playlist={playlist}",
     ]
@@ -96,10 +99,12 @@ class PlaylistController:
         self.socket_path = socket_path
         self.shuffle_enabled = False
         self.buttons = ButtonHandler(debounce_ms=50, gpio_mode=None)
+        self.leds = LEDHandler(gpio_mode=None)
         self.buttons.register_button(1, BUTTON_PLAY_PAUSE_BOARD, "Play/Pause")
         self.buttons.register_button(2, BUTTON_NEXT_BOARD, "Next")
         self.buttons.register_button(3, BUTTON_PREV_BOARD, "Previous")
         self.buttons.register_button(4, BUTTON_SHUFFLE_BOARD, "Shuffle")
+        self.leds.register_led("shuffle", LED_SHUFFLE_BOARD, initial_state=False)
 
     def start(self) -> None:
         """Start polling and connect callbacks for all four buttons."""
@@ -120,10 +125,12 @@ class PlaylistController:
     def toggle_shuffle(self, _event: Any) -> None:
         self.shuffle_enabled = not self.shuffle_enabled
         command = ["playlist-shuffle"] if self.shuffle_enabled else ["playlist-unshuffle"]
+        self.leds.set_state("shuffle", self.shuffle_enabled)
         self.send(command, f"Shuffle {'enabled' if self.shuffle_enabled else 'disabled'}")
 
     def cleanup(self) -> None:
         self.buttons.cleanup()
+        self.leds.cleanup()
 
 
 def main() -> int:

@@ -23,6 +23,7 @@ BUTTON_SHUFFLE_BOARD = 15      # BCM GPIO 22 - physical pin 15
 
 # LED GPIO Pins
 LED_SHUFFLE = 27          # GPIO 27 - Shuffle status indicator
+LED_SHUFFLE_BOARD = 13    # BCM GPIO 27 - physical pin 13
 
 # Potentiometer (PCF8591 ADC)
 PCF8591_I2C_ADDRESS = 0x48    # Default PCF8591 I2C address
