@@ -700,5 +700,23 @@ VLC media player 3.0.20 Vetinari (revision 3.0.20-0-g6f0d0ab126b)
 
 **Status**: RFID playlist playback, looping, physical controls, and shuffle LED are working as expected.
 
+### **Potentiometer Master Volume Control Verified (September 7, 2026)**
+
+- Confirmed that `src/rfid_playlist_controls.py` uses the PCF8591 potentiometer to control the active mpv session's volume.
+- The potentiometer configuration is inherited from `config/gpio_config.py`:
+  - I2C bus: `PCF8591_I2C_BUS` (bus 1)
+  - I2C address: `PCF8591_I2C_ADDRESS` (`0x48`)
+  - ADC channel: `PCF8591_CHANNEL_VOLUME` (AIN0)
+- Reused `PotentiometerHandler` from `src/potentiometer_handler.py` with a deadzone of 3 ADC units to reduce jitter.
+- The ADC value is converted to a 0-100% volume value.
+- Volume changes are sent directly to mpv through the existing Unix IPC socket using the JSON command:
+  ```json
+  {"command": ["set_property", "volume", 75]}
+  ```
+- This controls mpv's software volume for the active player without changing the Raspberry Pi's global ALSA mixer state.
+- The integrated controller now supports RFID playback, playlist looping, Play/Pause, Next, Previous, shuffle with LED feedback, and potentiometer volume control.
+
+**Status**: RFID playlist playback and all current physical controls, including potentiometer volume, are working as expected.
+
 **End of Logbook Entry**  
-*Next update expected: After adding additional RFID album mappings*
+*Next update expected: After defining the RFID tag-to-album/playlist mapping methodology*
