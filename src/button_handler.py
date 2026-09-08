@@ -15,6 +15,8 @@ try:
 except ImportError:  # pragma: no cover - fallback for testing on non-Pi systems
     GPIO = None
 
+DEFAULT_GPIO_MODE = GPIO.BCM if GPIO is not None else None
+
 # Setup logging
 logger = logging.getLogger(__name__)
 
@@ -41,12 +43,14 @@ class ButtonHandler:
     - Multiple button support
     """
     
-    def __init__(self, debounce_ms: int = 50):
+    def __init__(self, debounce_ms: int = 50, gpio_mode: Optional[int] = DEFAULT_GPIO_MODE):
         """
         Initialize button handler
         
         Args:
             debounce_ms: Debounce time in milliseconds (default 50ms)
+            gpio_mode: GPIO numbering mode to set. Pass None to preserve the
+                mode configured by another library, such as the RFID reader.
         """
         self.debounce_time = debounce_ms / 1000.0  # Convert to seconds
         self.buttons = {}
@@ -61,8 +65,9 @@ class ButtonHandler:
             logger.warning("RPi.GPIO not available; button handler will be non-functional")
             return
         
-        # Setup GPIO
-        GPIO.setmode(GPIO.BCM)
+        # Setup GPIO unless another component already selected the mode.
+        if gpio_mode is not None:
+            GPIO.setmode(gpio_mode)
         GPIO.setwarnings(False)
         
         logger.info(f"ButtonHandler initialized with {debounce_ms}ms debounce")
