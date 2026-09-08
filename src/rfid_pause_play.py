@@ -14,6 +14,7 @@ PROJECT_ROOT = Path(__file__).resolve().parents[1]
 if str(PROJECT_ROOT) not in sys.path:
     sys.path.insert(0, str(PROJECT_ROOT))
 
+from config.gpio_config import BUTTON_PLAY_PAUSE, BUTTON_PLAY_PAUSE_BOARD
 from src.button_handler import ButtonHandler
 from src.mpv_button_controller import send_mpv_command, socket_status
 
@@ -22,7 +23,6 @@ AUDIO_PATH = os.path.expanduser(
     "~/all_songs/mac_miller_swimming/Mac Miller-Jet Fuel.mp3"
 )
 SOCKET_PATH = "/tmp/rfid-mpv.sock"
-PLAY_PAUSE_BOARD_PIN = 37  # BCM GPIO 26 when using BOARD numbering
 
 
 def wait_for_tag() -> tuple[int, str]:
@@ -99,7 +99,7 @@ def main() -> int:
         # SimpleMFRC522 selects BOARD numbering. Preserve that mode and use
         # physical pin 37, which is BCM GPIO 26 from gpio_config.py.
         buttons = ButtonHandler(debounce_ms=50, gpio_mode=None)
-        buttons.register_button(1, PLAY_PAUSE_BOARD_PIN, "Play/Pause")
+        buttons.register_button(1, BUTTON_PLAY_PAUSE_BOARD, "Play/Pause")
 
         def toggle_pause(_event: Any) -> None:
             print("Play/Pause button pressed")
