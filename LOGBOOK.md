@@ -1,8 +1,8 @@
 # RFID/CD Music Player - Project Logbook
 
 **Project Start Date:** April 12, 2026  
-**Last Updated:** August 3, 2026  
-**Status:** Phase 4 In Progress - Offline RFID playback prototype implemented and tested; verified mpv playback of MP3 files through the HiFiBerry DAC
+**Last Updated:** September 7, 2026
+**Status:** Phase 4 In Progress - Verified RFID-triggered mpv playback with physical Play/Pause button control through the HiFiBerry DAC
 
 ---
 
@@ -648,5 +648,37 @@ VLC media player 3.0.20 Vetinari (revision 3.0.20-0-g6f0d0ab126b)
 
 ---
 
+### **RFID-Triggered MPV Playback and Pause/Play Verified (September 7, 2026)**
+
+- Confirmed that `src/rfid_pause_play.py` can wait for an RFID tag and start the hardcoded MP3 through mpv.
+- Verified audio playback on the Raspberry Pi using the HiFiBerry-compatible settings:
+  ```bash
+  mpv --no-audio-display --audio-device=alsa/default --audio-samplerate=48000 /path/to/file.mp3
+  ```
+- The script starts mpv with a Unix domain socket so the running mpv process can be controlled without restarting the audio session:
+  ```bash
+  mpv --no-audio-display \
+      --audio-device=alsa/default \
+      --audio-samplerate=48000 \
+      --input-ipc-server=/tmp/rfid-mpv.sock \
+      /path/to/file.mp3
+  ```
+- The socket path `/tmp/rfid-mpv.sock` is a local Unix stream socket created by mpv. It is not an audio device and does not carry audio; it carries control messages to the existing mpv process.
+- The script waits for the socket to exist and verifies that it is a Unix socket before enabling button control.
+- The Play/Pause button sends mpv's JSON IPC command:
+  ```json
+  {"command": ["cycle", "pause"]}
+  ```
+- Commands are newline-delimited JSON because mpv's IPC protocol expects one JSON command per line.
+- GPIO mode handling was corrected because `SimpleMFRC522` uses BOARD numbering while the project's shared configuration uses BCM numbering:
+  - `BUTTON_PLAY_PAUSE = 26` means BCM GPIO 26.
+  - `BUTTON_PLAY_PAUSE_BOARD = 37` means physical BOARD pin 37, the same hardware connection.
+  - `ButtonHandler(gpio_mode=None)` preserves the GPIO mode already selected by the RFID library.
+- `sandbox/test_buttons.py` remains the general button test using BCM mode. `src/rfid_pause_play.py` uses the shared configuration's BOARD equivalent when the RFID reader owns the GPIO mode.
+- Successful command to run the integrated test:
+  ```bash
+  python3 src/rfid_pause_play.py
+  ```
+
 **End of Logbook Entry**  
-*Next update expected: After successful RFID tag reading*
+*Next update expected: After successful pause/play hardware testing*

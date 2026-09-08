@@ -17,6 +17,9 @@ BUTTON_SHUFFLE = 22       # GPIO 22 - Shuffle On/Off
 
 # Physical BOARD-numbered equivalent used when the RFID library owns GPIO mode
 BUTTON_PLAY_PAUSE_BOARD = 37  # BCM GPIO 26 - physical pin 37
+BUTTON_NEXT_BOARD = 31         # BCM GPIO 6 - physical pin 31
+BUTTON_PREV_BOARD = 29         # BCM GPIO 5 - physical pin 29
+BUTTON_SHUFFLE_BOARD = 15      # BCM GPIO 22 - physical pin 15
 
 # LED GPIO Pins
 LED_SHUFFLE = 27          # GPIO 27 - Shuffle status indicator
