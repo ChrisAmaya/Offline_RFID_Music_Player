@@ -8,6 +8,7 @@ import sqlite3
 # Database paths
 BASE_DATA_DIR = os.path.join(os.path.dirname(__file__), "..", "data")
 MUSIC_DB_PATH = os.path.join(BASE_DATA_DIR, "jukebox.db")
+RFID_LIBRARY_DB_PATH = os.path.join(BASE_DATA_DIR, "rfid_library.db")
 CD_DB_PATH = os.path.join(BASE_DATA_DIR, "cd_database", "musicbrainz.db")
 
 # Database initialization
