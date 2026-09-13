@@ -13,6 +13,30 @@ from src.album_tracklist import build_tracklist_file
 AUDIO_SUFFIXES = {".mp3", ".m4a", ".flac", ".wav", ".ogg"}
 
 
+def normalize_tag_id(tag_id: object) -> str:
+    """Normalize decimal or hexadecimal RFID serial input to decimal text."""
+    if isinstance(tag_id, int):
+        if tag_id < 0:
+            raise ValueError("RFID tag ID cannot be negative")
+        return str(tag_id)
+
+    value = str(tag_id).strip()
+    if not value:
+        raise ValueError("tag_id is required")
+
+    compact = value.replace(":", "").replace("-", "").replace(" ", "")
+    try:
+        if value.lower().startswith("0x"):
+            return str(int(value, 16))
+        if any(character.isalpha() for character in compact) or any(separator in value for separator in ":- "):
+            return str(int(compact, 16))
+        return str(int(value, 10))
+    except ValueError as exc:
+        raise ValueError(
+            f"Invalid RFID tag ID {value!r}; use decimal or hexadecimal bytes such as 35:49:C0:A4"
+        ) from exc
+
+
 def initialize_database(db_path: Path) -> None:
     """Create the RFID library schema if it does not already exist."""
     db_path.parent.mkdir(parents=True, exist_ok=True)
@@ -79,9 +103,7 @@ def _content_id_for_directory(db: sqlite3.Connection, album_dir: Path) -> Option
 
 def register_tag(tag_id: str, album_dir: Path, db_path: Path) -> Path:
     """Map a unique RFID tag to an album directory and return its tracklist."""
-    normalized_tag = str(tag_id).strip()
-    if not normalized_tag:
-        raise ValueError("tag_id is required")
+    normalized_tag = normalize_tag_id(tag_id)
 
     album_dir = album_dir.expanduser().resolve()
     tracklist_path = ensure_tracklist(album_dir)
@@ -109,13 +131,14 @@ def register_tag(tag_id: str, album_dir: Path, db_path: Path) -> Path:
 
 def playlist_for_tag(tag_id: str, db_path: Path) -> Optional[Path]:
     """Resolve an RFID tag to its existing tracklist, or return None."""
+    normalized_tag = normalize_tag_id(tag_id)
     initialize_database(db_path)
     with sqlite3.connect(db_path) as db:
         row = db.execute(
             "SELECT content.path FROM tag_mappings "
             "JOIN content ON content.id = tag_mappings.content_id "
             "WHERE tag_mappings.tag_id = ? AND content.kind = 'album'",
-            (str(tag_id).strip(),),
+            (normalized_tag,),
         ).fetchone()
 
     if not row:

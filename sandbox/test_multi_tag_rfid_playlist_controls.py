@@ -12,7 +12,7 @@ PROJECT_ROOT = Path(__file__).resolve().parents[1]
 if str(PROJECT_ROOT) not in sys.path:
     sys.path.insert(0, str(PROJECT_ROOT))
 
-from src.rfid_library import playlist_for_tag, register_tag
+from src.rfid_library import normalize_tag_id, playlist_for_tag, register_tag
 
 DEFAULT_ALBUM = Path.home() / "Music" / "Mac Miller"
 
@@ -20,7 +20,7 @@ DEFAULT_ALBUM = Path.home() / "Music" / "Mac Miller"
 def main() -> int:
     parser = argparse.ArgumentParser(description="Test RFID playlist mapping and tracklist generation")
     parser.add_argument("--album-dir", default=str(DEFAULT_ALBUM))
-    parser.add_argument("--tag-id", default="TEST-MAC-MILLER")
+    parser.add_argument("--tag-id", default="99000001")
     parser.add_argument("--db", default=None)
     args = parser.parse_args()
 
@@ -39,7 +39,7 @@ def main() -> int:
             album_dirs = [music_dir]
 
         for index, album_dir in enumerate(album_dirs):
-            tag_id = args.tag_id if len(album_dirs) == 1 else f"{args.tag_id}-{index + 1}"
+            tag_id = args.tag_id if len(album_dirs) == 1 else str(int(args.tag_id) + index)
             tracklist_path = register_tag(tag_id, album_dir, db_path)
             resolved_path = playlist_for_tag(tag_id, db_path)
 
@@ -58,6 +58,7 @@ def main() -> int:
 
         print(f"Registered {len(album_dirs)} album mapping(s)")
         print(f"Database: {db_path}")
+        print(f"Serial example 35:49:C0:A4 normalizes to {normalize_tag_id('35:49:C0:A4')}")
 
     print("RFID playlist mapping test passed")
     return 0
