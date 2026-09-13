@@ -5,7 +5,9 @@ from __future__ import annotations
 
 import argparse
 import os
+import queue
 import sys
+import threading
 import time
 from pathlib import Path
 from typing import Any
@@ -16,58 +18,94 @@ if str(PROJECT_ROOT) not in sys.path:
 
 from config.database_config import RFID_LIBRARY_DB_PATH
 from src.rfid_library import playlist_for_tag, register_tag
-from src.rfid_playlist_controls import PlaylistController, start_player, wait_for_socket
 
 SOCKET_PATH = "/tmp/rfid-mpv.sock"
 
 
-def wait_for_tag() -> tuple[int, str]:
-    """Initialize RC522 and wait for one RFID tag."""
+def create_rfid_reader() -> Any:
+    """Initialize the RC522 reader and preserve its GPIO setup."""
     try:
         from mfrc522 import SimpleMFRC522
+        import RPi.GPIO as GPIO
     except ImportError as exc:
         raise RuntimeError("Install mfrc522 before running this script") from exc
 
-    reader = SimpleMFRC522()
-    print("RFID reader ready. Waiting for a tag...")
-    while True:
+    GPIO.setwarnings(False)
+    return SimpleMFRC522()
+
+
+class RFIDTagMonitor:
+    """Read tags continuously in the background while playback is active."""
+
+    def __init__(self, reader: Any) -> None:
+        self.reader = reader
+        self.tags: queue.Queue[tuple[int, str]] = queue.Queue()
+        self._stop_event = threading.Event()
+        self._thread: threading.Thread | None = None
+
+    def start(self) -> None:
+        self._stop_event.clear()
+        self._thread = threading.Thread(target=self._read_loop, daemon=True)
+        self._thread.start()
+
+    def _read_loop(self) -> None:
+        last_tag_id = None
+        last_tag_time = 0.0
+        while not self._stop_event.is_set():
+            try:
+                tag_id, text = self.reader.read()
+                now = time.time()
+                if tag_id != last_tag_id or now - last_tag_time > 1.0:
+                    self.tags.put((tag_id, (text or "").strip()))
+                    last_tag_id = tag_id
+                    last_tag_time = now
+            except Exception:
+                if not self._stop_event.is_set():
+                    time.sleep(0.1)
+
+    def get(self, timeout: float = 0.5) -> tuple[int, str] | None:
         try:
-            tag_id, text = reader.read()
-            return tag_id, (text or "").strip()
-        except KeyboardInterrupt:
-            raise
-        except Exception:
-            time.sleep(0.1)
+            return self.tags.get(timeout=timeout)
+        except queue.Empty:
+            return None
+
+    def stop(self) -> None:
+        self._stop_event.set()
+        if self._thread is not None:
+            self._thread.join(timeout=2)
 
 
-def run_tag(tag_id: str, db_path: Path) -> int:
-    """Start the mapped playlist and its hardware controls."""
+def start_tag_session(tag_id: str, db_path: Path):
+    """Start the mapped playlist and return its player and controls."""
+    from src.rfid_playlist_controls import PlaylistController, start_player, wait_for_socket
+
     playlist = playlist_for_tag(tag_id, db_path)
     if playlist is None:
         print(f"No playlist mapping found for RFID tag {tag_id}", file=sys.stderr)
-        return 2
+        return None, None
 
-    player = None
-    controls = None
-    try:
-        player = start_player(str(playlist), SOCKET_PATH)
-        if not wait_for_socket(SOCKET_PATH, player):
-            raise RuntimeError("mpv IPC socket did not become ready")
-        controls = PlaylistController(SOCKET_PATH)
-        controls.start()
-        print(f"Playing tag {tag_id}: {playlist}")
-        print("Play/Pause, Next, Previous, Shuffle, and volume controls are active.")
-        while player.poll() is None:
-            time.sleep(0.5)
-        return player.returncode or 0
-    finally:
-        if controls is not None:
-            controls.cleanup()
-        if player is not None and player.poll() is None:
-            player.terminate()
-            player.wait(timeout=3)
-        if os.path.exists(SOCKET_PATH):
-            os.unlink(SOCKET_PATH)
+    player = start_player(str(playlist), SOCKET_PATH)
+    if not wait_for_socket(SOCKET_PATH, player):
+        player.terminate()
+        player.wait(timeout=3)
+        raise RuntimeError("mpv IPC socket did not become ready")
+
+    controls = PlaylistController(SOCKET_PATH)
+    controls.start()
+    print(f"Playing tag {tag_id}: {playlist}")
+    print("Play/Pause, Next, Previous, Shuffle, and volume controls are active.")
+    return player, controls
+
+
+def stop_tag_session(player: Any, controls: Any) -> None:
+    """Stop the current controls and mpv process before switching playlists."""
+    if controls is not None:
+        controls.cleanup()
+    if player is not None and player.poll() is None:
+        player.terminate()
+        player.wait(timeout=3)
+    if os.path.exists(SOCKET_PATH):
+        os.unlink(SOCKET_PATH)
 
 
 def main() -> int:
@@ -84,21 +122,56 @@ def main() -> int:
         print(f"Mapped tag {tag_id} to {tracklist}")
         return 0
 
+    player = None
+    controls = None
+    monitor = None
+    active_tag = None
+
     try:
+        monitor = RFIDTagMonitor(create_rfid_reader())
+        monitor.start()
+        print("RFID reader ready. Waiting for tags...")
+
         while True:
-            tag_id, text = wait_for_tag()
+            detected = monitor.get()
+            if detected is None:
+                if player is not None and player.poll() is not None:
+                    stop_tag_session(player, controls)
+                    player = None
+                    controls = None
+                    active_tag = None
+                continue
+
+            tag_id, text = detected
+            tag_key = str(tag_id)
+            if tag_key == active_tag:
+                continue
+
             print(f"Tag detected: {tag_id}" + (f" ({text})" if text else ""))
-            result = run_tag(str(tag_id), db_path)
+            monitor.stop()
+            stop_tag_session(player, controls)
+            player = None
+            controls = None
+            monitor = None
+
+            player, controls = start_tag_session(tag_key, db_path)
+            active_tag = tag_key if player is not None else None
+
             if args.once:
-                return result
-            if result == 2:
-                print("Waiting for another RFID tag...")
+                return 0 if player is not None else 2
+
+            monitor = RFIDTagMonitor(create_rfid_reader())
+            monitor.start()
     except KeyboardInterrupt:
         print("Stopping")
         return 0
     except Exception as exc:
         print(f"Error: {exc}", file=sys.stderr)
         return 1
+    finally:
+        if monitor is not None:
+            monitor.stop()
+        stop_tag_session(player, controls)
 
 
 if __name__ == "__main__":
