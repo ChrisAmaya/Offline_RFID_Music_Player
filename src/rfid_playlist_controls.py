@@ -81,11 +81,12 @@ def start_player(playlist_path: str, socket_path: str) -> subprocess.Popen[Any]:
         "--audio-device=alsa/default",
         "--audio-samplerate=48000",
         "--loop-playlist=inf",
+        "--no-input-terminal",
         f"--input-ipc-server={socket_path}",
         f"--playlist={playlist}",
     ]
     print(f"Starting playlist: {playlist}")
-    process = subprocess.Popen(command)
+    process = subprocess.Popen(command, stdin=subprocess.DEVNULL, start_new_session=True)
 
     if not wait_for_socket(socket_path, process):
         raise RuntimeError(
