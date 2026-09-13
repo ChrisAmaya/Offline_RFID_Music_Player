@@ -718,5 +718,26 @@ VLC media player 3.0.20 Vetinari (revision 3.0.20-0-g6f0d0ab126b)
 
 **Status**: RFID playlist playback and all current physical controls, including potentiometer volume, are working as expected.
 
+### **Multi-Album Switching and Path Handling (September 12, 2026)**
+
+- Confirmed that mapped RFID tags can select different albums while the player is already running.
+- Updated `src/multi_tag_rfid_playlist_controls.py` to continue monitoring RFID tags during playback.
+- When a new mapped tag is detected, the current mpv process is stopped and the newly mapped playlist is started.
+- Preserved the existing button, shuffle LED, and potentiometer control setup across album switches.
+- Added mpv `--no-input-terminal` and detached mpv from the controlling terminal so Ctrl+C can shut down the Python controller without leaving the SSH terminal in an unusable state.
+- Improved shutdown handling to remove the mpv socket and terminate the active player cleanly.
+- Updated tracklist validation so stale absolute paths are regenerated when files have been moved or uploaded to a different directory.
+- Confirmed that filenames containing spaces, parentheses, apostrophes, ampersands, and dollar signs are supported when the tracklist contains the correct absolute paths.
+
+**Next Steps: Startup and Shutdown Testing**
+
+- Pull the latest changes onto the Raspberry Pi.
+- Start `src/multi_tag_rfid_playlist_controls.py` over SSH.
+- Confirm that the process waits safely for an RFID tag without starting mpv prematurely.
+- Scan a mapped tag and verify playlist startup, button controls, shuffle LED, and potentiometer volume.
+- Scan a second mapped tag and verify the album switches while all controls remain active.
+- Press `Ctrl+C` and confirm that mpv terminates, the RFID reader and GPIO resources are cleaned up, and `/tmp/rfid-mpv.sock` is removed.
+- Re-run the controller after shutdown to confirm the Raspberry Pi can start a fresh session without reconnecting SSH.
+
 **End of Logbook Entry**  
-*Next update expected: After defining the RFID tag-to-album/playlist mapping methodology*
+*Next update expected: After completing startup and shutdown testing*
