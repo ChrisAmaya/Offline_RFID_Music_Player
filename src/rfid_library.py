@@ -79,7 +79,16 @@ def ensure_tracklist(album_dir: Path) -> Path:
         raise FileNotFoundError(f"Album directory not found: {album_dir}")
 
     tracklist_path = album_dir / "tracklist.txt"
-    if not tracklist_path.exists():
+    tracklist_needs_refresh = True
+    if tracklist_path.is_file():
+        entries = [
+            Path(line.strip()).expanduser()
+            for line in tracklist_path.read_text(encoding="utf-8").splitlines()
+            if line.strip()
+        ]
+        tracklist_needs_refresh = not entries or any(not entry.is_file() for entry in entries)
+
+    if tracklist_needs_refresh:
         audio_files = [
             path for path in album_dir.iterdir()
             if path.is_file() and path.suffix.lower() in AUDIO_SUFFIXES

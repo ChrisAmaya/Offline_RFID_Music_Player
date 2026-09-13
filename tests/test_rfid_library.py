@@ -52,6 +52,19 @@ class RFIDLibraryTests(unittest.TestCase):
             with sqlite3.connect(db_path) as db:
                 self.assertEqual(db.execute("SELECT COUNT(*) FROM tag_mappings").fetchone()[0], 1)
 
+    def test_registering_refreshes_stale_tracklist_paths(self):
+        with tempfile.TemporaryDirectory() as temp_dir:
+            album_dir = Path(temp_dir) / "Album With Spaces"
+            album_dir.mkdir()
+            track = album_dir / "01 Track With Spaces.mp3"
+            track.write_bytes(b"audio")
+            stale = album_dir / "tracklist.txt"
+            stale.write_text("/old/location/01 Track With Spaces.mp3\n", encoding="utf-8")
+
+            register_tag("789", album_dir, Path(temp_dir) / "library.db")
+
+            self.assertEqual(stale.read_text(encoding="utf-8").splitlines(), [str(track.resolve())])
+
 
 if __name__ == "__main__":
     unittest.main()
