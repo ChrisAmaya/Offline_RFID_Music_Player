@@ -739,5 +739,27 @@ VLC media player 3.0.20 Vetinari (revision 3.0.20-0-g6f0d0ab126b)
 - Press `Ctrl+C` and confirm that mpv terminates, the RFID reader and GPIO resources are cleaned up, and `/tmp/rfid-mpv.sock` is removed.
 - Re-run the controller after shutdown to confirm the Raspberry Pi can start a fresh session without reconnecting SSH.
 
+### **Future Goal: Jellyfin/Plex Media Server Integration**
+
+This is a planning note only. No runtime code changes are being made yet.
+
+- Keep the RFID tag mapping concept independent from the playback backend. A tag should continue to identify an album or playlist, while the player later decides whether that content is local or server-backed.
+- Configure and validate the Jellyfin or Plex server before changing the Pi software. Confirm the server library, user account, authentication, network address, and remote playback access first.
+- Prefer mounting the server's music library on the Pi over SMB or NFS if offline/local playback and the existing mpv flow should remain available. The Pi can then continue using local-looking file paths while the files physically live on the server.
+- Use a stable mount point such as `/mnt/music` and keep it consistent across reboots. Avoid embedding temporary mount paths in RFID mappings.
+- If using Jellyfin or Plex APIs instead of a network mount, store a stable server identifier for each album or playlist rather than relying on display names or file paths. Names and folder paths can change; server item IDs are intended to remain stable.
+- Preserve the current SQLite database as the local RFID registry. Future mappings can include a playback source such as `local`, `jellyfin`, or `plex`, plus a server/library item ID.
+- Keep a local fallback path where practical. If the server is unavailable, the Pi should report the failure clearly and avoid destroying the current mapping or playlist state.
+- Do not copy the Pi's local database directly into Jellyfin or Plex. These services maintain their own metadata databases; the RFID player's database should remain the source of tag-to-content associations.
+- Recommended migration order:
+  1. Configure the media server and confirm album metadata.
+  2. Organize the server music library with stable album folders.
+  3. Mount or securely access the library from the Pi.
+  4. Confirm one album plays through the existing mpv path.
+  5. Add a server content identifier to one RFID mapping.
+  6. Test server-backed playback and offline/error behavior.
+  7. Expand the schema and mappings only after the single-album path is reliable.
+- Jellyfin is likely the cleaner first integration target because it has an open API and well-documented media item model. Plex remains viable, but its authentication and API behavior should be evaluated separately.
+
 **End of Logbook Entry**  
-*Next update expected: After completing startup and shutdown testing*
+*Next update expected: After completing startup and shutdown testing or configuring the future media server*
