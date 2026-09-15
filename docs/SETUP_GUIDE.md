@@ -64,6 +64,74 @@ python3 src/multi_tag_rfid_playlist_controls.py
 python3 -m unittest discover -s tests -p 'test_*.py'
 ```
 
-## Shutdown
+## Automatic Startup with systemd
 
-Press `Ctrl+C`. The controller should stop RFID polling, terminate mpv, clean up GPIO/I2C resources, and remove `/tmp/rfid-mpv.sock`.
+The repository includes `systemd/rfid-player.service`. Install it on the Pi after the repository, virtual environment, and music are ready:
+
+```bash
+cd ~/Offline_RFID_Music_Player
+sudo cp systemd/rfid-player.service /etc/systemd/system/rfid-player.service
+sudo systemctl daemon-reload
+sudo systemctl enable rfid-player.service
+sudo systemctl start rfid-player.service
+```
+
+Check whether it started:
+
+```bash
+sudo systemctl status rfid-player.service
+```
+
+Follow live service output while debugging:
+
+```bash
+sudo journalctl -u rfid-player.service -f
+```
+
+The service automatically restarts after an unexpected failure because of `Restart=on-failure`.
+
+## Application Logs
+
+The Python runtime writes to:
+
+```text
+~/Offline_RFID_Music_Player/logs/rfid-player.log
+```
+
+The log rotates at 2 MB and keeps 5 backups, for a maximum of approximately 12 MB. View recent entries with:
+
+```bash
+tail -n 100 ~/Offline_RFID_Music_Player/logs/rfid-player.log
+```
+
+To inspect the service and application logs together:
+
+```bash
+sudo journalctl -u rfid-player.service -n 100 --no-pager
+tail -n 100 ~/Offline_RFID_Music_Player/logs/rfid-player.log
+```
+
+## Manual Start and Shutdown
+
+For interactive debugging, stop systemd first:
+
+```bash
+sudo systemctl stop rfid-player.service
+source ~/Offline_RFID_Music_Player/venv/bin/activate
+cd ~/Offline_RFID_Music_Player
+python3 -u src/multi_tag_rfid_playlist_controls.py
+```
+
+Press `Ctrl+C` to stop the manual process. The controller should stop RFID polling, terminate mpv, clean up GPIO/I2C resources, and remove `/tmp/rfid-mpv.sock`.
+
+To stop the managed service:
+
+```bash
+sudo systemctl stop rfid-player.service
+```
+
+To disable automatic startup:
+
+```bash
+sudo systemctl disable rfid-player.service
+```

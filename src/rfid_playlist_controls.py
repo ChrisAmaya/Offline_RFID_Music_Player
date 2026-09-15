@@ -4,6 +4,7 @@
 from __future__ import annotations
 
 import os
+import logging
 import subprocess
 import sys
 import time
@@ -33,6 +34,7 @@ from src.potentiometer_handler import PotentiometerHandler
 
 PLAYLIST_PATH = os.path.expanduser("~/all_songs/mac_miller_swimming/tracklist.txt")
 SOCKET_PATH = "/tmp/rfid-mpv.sock"
+logger = logging.getLogger(__name__)
 
 
 def build_mpv_command(playlist_path: str, socket_path: str) -> list[str]:
@@ -91,6 +93,7 @@ def start_player(playlist_path: str, socket_path: str) -> subprocess.Popen[Any]:
 
     command = build_mpv_command(str(playlist), socket_path)
     print(f"Starting playlist: {playlist}")
+    logger.info("Starting mpv playlist: %s", playlist)
     process = subprocess.Popen(command, stdin=subprocess.DEVNULL, start_new_session=True)
 
     if not wait_for_socket(socket_path, process):
@@ -99,6 +102,7 @@ def start_player(playlist_path: str, socket_path: str) -> subprocess.Popen[Any]:
         )
 
     print(f"mpv playlist started; socket ready: {socket_path}")
+    logger.info("mpv socket ready: %s", socket_path)
     return process
 
 
@@ -139,6 +143,7 @@ class PlaylistController:
 
     def send(self, command: list[str], label: str) -> None:
         print(f"{label}: {command}")
+        logger.info("%s: %s", label, command)
         send_mpv_command(self.socket_path, command)
 
     def toggle_shuffle(self, _event: Any) -> None:
@@ -149,6 +154,7 @@ class PlaylistController:
 
     def set_volume(self, _raw_value: int, percentage: int) -> None:
         """Set mpv's software volume from the PCF8591 potentiometer."""
+        logger.info("Volume changed to %s%%", percentage)
         self.send(["set_property", "volume", percentage], f"Volume {percentage}%")
 
     def cleanup(self) -> None:

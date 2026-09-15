@@ -4,6 +4,7 @@
 from __future__ import annotations
 
 import argparse
+import logging
 import os
 import queue
 import sys
@@ -17,9 +18,11 @@ if str(PROJECT_ROOT) not in sys.path:
     sys.path.insert(0, str(PROJECT_ROOT))
 
 from config.database_config import RFID_LIBRARY_DB_PATH
+from config.logging_config import configure_logging
 from src.rfid_library import playlist_for_tag, register_tag
 
 SOCKET_PATH = "/tmp/rfid-mpv.sock"
+logger = logging.getLogger(__name__)
 
 
 def create_rfid_reader() -> Any:
@@ -31,6 +34,7 @@ def create_rfid_reader() -> Any:
         raise RuntimeError("Install mfrc522 before running this script") from exc
 
     GPIO.setwarnings(False)
+    logger.info("Initializing RFID reader")
     return SimpleMFRC522()
 
 
@@ -57,6 +61,7 @@ class RFIDTagMonitor:
                 now = time.time()
                 if tag_id != last_tag_id or now - last_tag_time > 1.0:
                     self.tags.put((tag_id, (text or "").strip()))
+                    logger.info("RFID tag detected: %s", tag_id)
                     last_tag_id = tag_id
                     last_tag_time = now
             except Exception:
@@ -82,6 +87,7 @@ def start_tag_session(tag_id: str, db_path: Path):
     playlist = playlist_for_tag(tag_id, db_path)
     if playlist is None:
         print(f"No playlist mapping found for RFID tag {tag_id}", file=sys.stderr)
+        logger.warning("No playlist mapping found for RFID tag %s", tag_id)
         return None
 
     player = start_player(str(playlist), SOCKET_PATH)
@@ -91,12 +97,14 @@ def start_tag_session(tag_id: str, db_path: Path):
         raise RuntimeError("mpv IPC socket did not become ready")
 
     print(f"Playing tag {tag_id}: {playlist}")
+    logger.info("Started playlist for tag %s: %s", tag_id, playlist)
     return player
 
 
 def stop_player(player: Any) -> None:
     """Stop only mpv so the hardware controllers survive album changes."""
     if player is not None and player.poll() is None:
+        logger.info("Stopping mpv player")
         player.terminate()
         try:
             player.wait(timeout=3)
@@ -107,6 +115,7 @@ def stop_player(player: Any) -> None:
 
 
 def main() -> int:
+    log_path = configure_logging()
     parser = argparse.ArgumentParser(description="Map RFID tags to album playlists and play them")
     parser.add_argument("--db", default=RFID_LIBRARY_DB_PATH, help="SQLite RFID library path")
     parser.add_argument("--register", nargs=2, metavar=("TAG_ID", "ALBUM_DIR"), help="Register a tag-to-album mapping")
@@ -118,6 +127,7 @@ def main() -> int:
         tag_id, album_dir = args.register
         tracklist = register_tag(tag_id, Path(album_dir), db_path)
         print(f"Mapped tag {tag_id} to {tracklist}")
+        logger.info("Registered tag %s to %s", tag_id, tracklist)
         return 0
 
     player = None
@@ -129,6 +139,7 @@ def main() -> int:
         monitor = RFIDTagMonitor(create_rfid_reader())
         monitor.start()
         print("RFID reader ready. Waiting for tags...")
+        logger.info("Player started; logging to %s", log_path)
 
         while True:
             detected = monitor.get()
@@ -164,9 +175,11 @@ def main() -> int:
 
     except KeyboardInterrupt:
         print("Stopping")
+        logger.info("Shutdown requested by user")
         return 0
     except Exception as exc:
         print(f"Error: {exc}", file=sys.stderr)
+        logger.exception("Unhandled player error")
         return 1
     finally:
         if monitor is not None:
@@ -174,6 +187,7 @@ def main() -> int:
         if controls is not None:
             controls.cleanup()
         stop_player(player)
+        logger.info("Player shutdown complete")
 
 
 if __name__ == "__main__":

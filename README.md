@@ -55,6 +55,8 @@ tests/
 data/rfid_library.db          Runtime tag-to-album database
 docs/
   Setup and hardware documentation
+systemd/
+  rfid-player.service         Automatic startup definition
 ```
 
 ## Setup

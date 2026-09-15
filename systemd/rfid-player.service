@@ -1,0 +1,15 @@
+[Unit]
+Description=Offline RFID Music Player
+After=local-fs.target sound.target
+Wants=sound.target
+
+[Service]
+Type=simple
+WorkingDirectory=%h/Offline_RFID_Music_Player
+ExecStart=%h/Offline_RFID_Music_Player/venv/bin/python -u %h/Offline_RFID_Music_Player/src/multi_tag_rfid_playlist_controls.py
+Restart=on-failure
+RestartSec=5
+Environment=PYTHONUNBUFFERED=1
+
+[Install]
+WantedBy=multi-user.target

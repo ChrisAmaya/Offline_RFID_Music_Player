@@ -5,6 +5,7 @@ from __future__ import annotations
 
 import argparse
 import json
+import logging
 import os
 import socket
 import stat
@@ -16,6 +17,7 @@ from typing import Optional
 
 
 DEBUG = True
+logger = logging.getLogger(__name__)
 
 PROJECT_ROOT = Path(__file__).resolve().parents[1]
 if str(PROJECT_ROOT) not in sys.path:
@@ -89,12 +91,14 @@ def send_mpv_command(socket_path: str, command: list[str]) -> None:
             sock.connect(socket_path)
             sock.sendall(payload.encode("utf-8"))
             debug_print(f"command sent successfully to {socket_path}")
+            logger.info("mpv command sent: %s", command)
     except FileNotFoundError:
         debug_print(f"socket not found at {socket_path}")
     except ConnectionRefusedError:
         debug_print(f"socket connection refused at {socket_path}")
     except Exception as exc:
         debug_print(f"socket send failed: {exc}")
+        logger.exception("mpv socket command failed")
 
 
 class MPVButtonController:
