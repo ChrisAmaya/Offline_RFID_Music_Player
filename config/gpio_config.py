@@ -53,4 +53,4 @@ GPIO_PINS = {
     }
 }
 
-print(f"GPIO Configuration loaded for RFID/CD Music Player")
+print(f"GPIO Configuration loaded for Offline RFID Music Player")

@@ -12,7 +12,7 @@ from typing import Optional, Callable
 try:
     import smbus
 except ImportError:
-    raise ImportError("smbus library not installed. Install with: pip install smbus-cffi")
+    smbus = None
 
 # Setup logging
 logger = logging.getLogger(__name__)
@@ -52,6 +52,9 @@ class PotentiometerHandler:
         self._running = False
         self._thread = None
         self._lock = threading.Lock()
+
+        if smbus is None:
+            raise ImportError("smbus library not installed. Install with: pip install smbus-cffi")
         
         # Initialize I2C bus
         try:

@@ -1,94 +1,82 @@
-# RFID/CD Music Player
+# Offline RFID Music Player
 
-A Raspberry Pi 3B-based music player that combines RFID tag recognition with CD playback capabilities. Play Spotify-ripped albums via RFID tags or insert physical CDs with automatic metadata lookup.
+An offline Raspberry Pi 3B music player that maps RFID tags to local album playlists and plays them through mpv.
 
 ## Features
 
-- **RFID Playback**: Tap RFID tags to play custom playlists and albums
-- **CD Support**: Insert CDs with automatic TOC-based album identification
-- **Local Database**: Pre-loaded MusicBrainz database for CD metadata and album art
-- **Physical Controls**: 5 buttons for skip, previous, play/pause, shuffle toggle, and volume
-- **High Audio Quality**: HiFiBerry DAC+ Light for clean audio output
-- **3.5" Display**: Real-time album art, track info, and interface
-- **Offline Operation**: No internet required for playback
+- RFID tag-to-album mapping stored in SQLite
+- Automatic `tracklist.txt` generation from audio metadata
+- Alphabetical fallback ordering when track metadata is unavailable
+- mpv playback through the HiFiBerry DAC at 48 kHz
+- Play/pause, next, previous, and shuffle buttons
+- Shuffle status LED
+- PCF8591 potentiometer volume control
+- Album switching while playback is active
+- Infinite playlist looping
+- Offline operation
 
-## Hardware
+## Runtime
 
-- Raspberry Pi 3B Model v1.2
-- 3.5" TFT SPI 480x320 Display + LCD Shield
-- RFID-RC522 Reader
-- HiFiBerry DAC+ Light
-- USB CD/DVD Reader
-- Powered Speakers (20W+)
-- 5 Momentary Push Buttons
-- 256GB microSD Card (music + database)
-- 5V/2.5A Power Supply
+Start the player:
 
-## Software Stack
+```bash
+python3 src/multi_tag_rfid_playlist_controls.py
+```
 
-- **OS**: Raspberry Pi OS Lite
-- **Audio Player**: mpv
-- **Database**: SQLite3
-- **Backend**: Python 3.9+
-- **UI**: pygame (TFT display)
-- **RFID**: mfrc522-python
-- **CD Handling**: libcdio + cdparanoia
+Register a tag to an album directory:
+
+```bash
+python3 src/multi_tag_rfid_playlist_controls.py \
+  --register 1053655409858 \
+  /home/neonkon/Music/mac-miller-swimming
+```
+
+Registration creates or refreshes the album's `tracklist.txt` and stores the mapping in `data/rfid_library.db`.
 
 ## Project Structure
 
-```
-RFID_Player/
-├── README.md
-├── requirements.txt
-├── setup.sh
-├── config/
-│   ├── gpio_config.py
-│   ├── audio_config.py
-│   └── database_schema.sql
-├── src/
-│   ├── main.py
-│   ├── rfid_reader.py
-│   ├── audio_player.py
-│   ├── cd_player.py
-│   ├── button_handler.py
-│   ├── display_manager.py
-│   └── database.py
-├── data/
-│   ├── music/
-│   ├── cd_database/
-│   └── jukebox.db
-├── tests/
-│   └── test_*.py
-└── docs/
-    ├── GPIO_PINOUT.md
-    ├── SETUP_GUIDE.md
-    └── ARCHITECTURE.md
+```text
+config/
+  gpio_config.py             Shared BCM and BOARD pin configuration
+  database_config.py         SQLite database paths
+src/
+  multi_tag_rfid_playlist_controls.py  Main RFID runtime
+  rfid_library.py            Tag mappings and tracklist generation
+  rfid_playlist_controls.py  mpv and hardware-control session
+  mpv_button_controller.py   mpv JSON IPC transport
+  album_tracklist.py         Metadata-based track ordering
+  button_handler.py          Debounced button polling
+  led_handler.py             Shuffle LED control
+  potentiometer_handler.py   PCF8591 volume input
+sandbox/
+  Hardware and mapping diagnostics
+tests/
+  Software regression tests
+data/rfid_library.db          Runtime tag-to-album database
+docs/
+  Setup and hardware documentation
 ```
 
-## Installation
-
-1. Clone the repository
-2. Run setup script: `bash setup.sh`
-3. Configure settings in `config/`
-4. See [SETUP_GUIDE.md](docs/SETUP_GUIDE.md) for detailed instructions
-
-## Usage
+## Setup
 
 ```bash
-python src/main.py
+python3 -m venv venv
+source venv/bin/activate
+pip install -r requirements.txt
+sudo apt update
+sudo apt install mpv unzip
 ```
 
-## Timeline
+See [docs/SETUP_GUIDE.md](docs/SETUP_GUIDE.md) for setup and [docs/GPIO_PINOUT.md](docs/GPIO_PINOUT.md) for verified pin assignments.
 
-- **Phase 1-2** (Weeks 1-3): Hardware assembly and testing
-- **Phase 3-5** (Weeks 3-7): Core software and playback
-- **Phase 6-7** (Weeks 7-11): CD support and database integration
-- **Phase 8-9** (Weeks 9-13): Testing, optimization, and finalization
+## Testing
 
-## License
+```bash
+python3 -m unittest discover -s tests -p 'test_*.py'
+```
 
-MIT
+Hardware diagnostics in `sandbox/` require the Raspberry Pi and connected hardware.
 
-## Authors
+## Scope
 
-- neonkon
+This project intentionally does not support CD playback or a display. The current scope is local audio, RFID, physical controls, and the HiFiBerry output.

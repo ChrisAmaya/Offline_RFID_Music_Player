@@ -35,6 +35,20 @@ PLAYLIST_PATH = os.path.expanduser("~/all_songs/mac_miller_swimming/tracklist.tx
 SOCKET_PATH = "/tmp/rfid-mpv.sock"
 
 
+def build_mpv_command(playlist_path: str, socket_path: str) -> list[str]:
+    """Build the detached mpv command used for playlist playback."""
+    return [
+        "mpv",
+        "--no-audio-display",
+        "--audio-device=alsa/default",
+        "--audio-samplerate=48000",
+        "--loop-playlist=inf",
+        "--no-input-terminal",
+        f"--input-ipc-server={socket_path}",
+        f"--playlist={playlist_path}",
+    ]
+
+
 def wait_for_tag() -> tuple[int, str]:
     """Initialize the RC522 reader and wait for one RFID tag."""
     try:
@@ -75,16 +89,7 @@ def start_player(playlist_path: str, socket_path: str) -> subprocess.Popen[Any]:
     if os.path.exists(socket_path):
         os.unlink(socket_path)
 
-    command = [
-        "mpv",
-        "--no-audio-display",
-        "--audio-device=alsa/default",
-        "--audio-samplerate=48000",
-        "--loop-playlist=inf",
-        "--no-input-terminal",
-        f"--input-ipc-server={socket_path}",
-        f"--playlist={playlist}",
-    ]
+    command = build_mpv_command(str(playlist), socket_path)
     print(f"Starting playlist: {playlist}")
     process = subprocess.Popen(command, stdin=subprocess.DEVNULL, start_new_session=True)
 

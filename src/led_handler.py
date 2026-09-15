@@ -10,7 +10,9 @@ from typing import Dict
 try:
     import RPi.GPIO as GPIO
 except ImportError:
-    raise ImportError("RPi.GPIO library not installed")
+    GPIO = None
+
+DEFAULT_GPIO_MODE = GPIO.BCM if GPIO is not None else None
 
 # Setup logging
 logger = logging.getLogger(__name__)
@@ -26,10 +28,15 @@ class LEDHandler:
     - State tracking
     """
     
-    def __init__(self, gpio_mode=GPIO.BCM):
+    def __init__(self, gpio_mode=DEFAULT_GPIO_MODE):
         """Initialize LED handler, optionally preserving an existing GPIO mode."""
         self.leds = {}
         self.states = {}
+        self._gpio_available = GPIO is not None
+
+        if not self._gpio_available:
+            logger.warning("RPi.GPIO not available; LED handler will be non-functional")
+            return
         
         # Setup GPIO
         if gpio_mode is not None:
@@ -47,6 +54,11 @@ class LEDHandler:
             gpio_pin: GPIO pin number (BCM)
             initial_state: Initial state (True=on, False=off)
         """
+        if not self._gpio_available:
+            self.leds[led_id] = gpio_pin
+            self.states[led_id] = initial_state
+            return True
+
         try:
             GPIO.setup(gpio_pin, GPIO.OUT)
             self.leds[led_id] = gpio_pin
@@ -143,7 +155,8 @@ class LEDHandler:
     
     def cleanup(self):
         """Clean up GPIO resources"""
-        GPIO.cleanup()
+        if GPIO is not None:
+            GPIO.cleanup()
         logger.info("LEDHandler cleanup complete")
     
     def __del__(self):

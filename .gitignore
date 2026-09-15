@@ -42,7 +42,6 @@ Thumbs.db
 
 # Project-specific
 data/music/*
-data/cd_database/*
 logs/
 *.log
 *.mp3
@@ -51,6 +50,5 @@ logs/
 *.flac
 !data/rfid_library.db
 
-# Node (if using web UI)
 node_modules/
 npm-debug.log
